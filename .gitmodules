@@ -1,0 +1,4 @@
+[submodule "3rd-party/qcustomplot"]
+	path = 3rd-party/qcustomplot
+	url = https://github.com/edragontrading/QCustomPlot.git
+	branch = dev
