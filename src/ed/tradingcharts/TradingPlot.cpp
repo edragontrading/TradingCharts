@@ -91,6 +91,8 @@ ETradingPlot::ETradingPlot(QWidget *parent) : QCustomPlot(parent), d(new Private
 }
 
 ETradingPlot::~ETradingPlot() {
+    qDebug() << Q_FUNC_INFO  << "start";
+    qDebug() << Q_FUNC_INFO  << "end";
 }
 
 QCPLayer *ETradingPlot::userLayer() const {
@@ -105,11 +107,19 @@ void ETradingPlot::mousePressEvent(QMouseEvent *event) {
                 d->mPointUnderCursor->setActive(false);
             }
 
-            plotPoint->setActive(true);
             d->mPointSelected = plotPoint;
             d->mPointUnderCursor = nullptr;
             d->mPointSelected->setActive(true);
+            
+            if (d->mPointSelected->isResizeable(event->position())) {
+                d->mPointSelected->startResizing(event->position(), event->modifiers().testFlag(Qt::ShiftModifier));
+            }
+            else {
+                d->mPointSelected->startMoving(event->position(), event->modifiers().testFlag(Qt::ShiftModifier));
+            }
+
             d->mUserLayer->replot();
+
             return;
         } else if (d->mPointSelected != nullptr) {
             d->mPointSelected->setActive(false);
@@ -145,10 +155,6 @@ void ETradingPlot::mouseMoveEvent(QMouseEvent *event) {
             }
             d->mPointUnderCursor = plotPoint;
             d->mUserLayer->replot();
-        }
-    } else if (event->buttons() == Qt::LeftButton) {
-        if (d->mPointSelected != nullptr && !d->mPointSelected->isMoving()) {
-            d->mPointSelected->startMoving(event->position(), event->modifiers().testFlag(Qt::ShiftModifier));
         }
     }
 }

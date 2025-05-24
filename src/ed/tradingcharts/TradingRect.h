@@ -44,6 +44,9 @@ public:
     void setActive(bool active) override;
     void startMoving(const QPointF &mousePos, bool shiftIsPressed) override;
     bool isMoving() override;
+    bool isResizeable(const QPointF &mousePos) override;
+    bool isResizing() override;
+    void startResizing(const QPointF& mousePos, bool shiftIsPressed) override;
 
     QPointF pos() const;
     const QColor &color() const;
@@ -61,7 +64,6 @@ public Q_SLOTS:
     void moveCoord(double x1, double y1, double x2, double y2);
 
 private Q_SLOTS:
-    void movePixel(double x1, double y1, double x2, double y2);
     void onMouseMove(QMouseEvent *event);
     void stopMoving();
     void moveToWantedPos();
@@ -71,6 +73,8 @@ private Q_SLOTS:
 private:
     void createTopLeftResize();
     void createBottomRightResize();
+    bool isTopLeftResize(const QPointF& mousePos);
+    bool isBottomRightResize(const QPointF& mousePos);
 
 private:
     struct Private;

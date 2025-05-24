@@ -47,8 +47,24 @@
 #define ED_PRINT(s)
 #endif
 
+#include <math.h>
+
+#include <QPoint>
+#include <QPointF>
+
 namespace ed {
 Q_NAMESPACE
+
+namespace interal {
+
+template <typename TPoint>
+inline double distance(const TPoint& p1, const TPoint& p2) {
+    double dx = p2.x() - p1.x();
+    double dy = p2.y() - p1.y();
+    return std::sqrt(dx * dx + dy * dy);
+}
+
+}  // namespace interal
 
 }  // namespace ed
 

@@ -82,9 +82,9 @@ EResizeHandle::EResizeHandle(ETradingPlot *parent, int halfSize) : QCPItemEllips
     topLeft->setCoords(-halfSize, -halfSize);
     bottomRight->setCoords(halfSize, halfSize);
 
-    setSelectable(true);
+    setSelectable(false);
     setColor(QColor(35, 125, 100, 255));
-    setPen(QPen(Qt::blue));
+    setPen(QPen(Qt::blue, 3));
     setSelectedPen(QPen(Qt::red, 3));
     setLayer(d->mUserLayer);
 
@@ -93,6 +93,17 @@ EResizeHandle::EResizeHandle(ETradingPlot *parent, int halfSize) : QCPItemEllips
 }
 
 EResizeHandle::~EResizeHandle() {
+    d->mMoveTimer->stop();
+    delete d->mMoveTimer;
+
+    if (parentPlot()->hasItem(d->mHelperVertical)) {
+        parentPlot()->removeItem(d->mHelperVertical);
+    }
+    
+    if (parentPlot()->hasItem(d->mHelperHorizontal)) {
+        parentPlot()->removeItem(d->mHelperHorizontal);
+    }
+
     delete d;
 }
 

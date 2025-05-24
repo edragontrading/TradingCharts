@@ -37,6 +37,12 @@ public:
     virtual void startMoving(const QPointF& mousePos, bool shiftIsPressed) = 0;
 
     virtual bool isMoving() = 0;
+
+    virtual bool isResizeable(const QPointF &mousePos) = 0;
+
+    virtual void startResizing(const QPointF& mousePos, bool shiftIsPressed) = 0;
+
+    virtual bool isResizing() = 0;
 };
 }  // namespace ed
 

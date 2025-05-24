@@ -32,18 +32,17 @@ namespace ed {
 
 class ETradingPlot;
 
-class ED_EXPORT EResizeHandle : public QCPItemEllipse, public ETradingPlotable {
+class ED_EXPORT EResizeHandle : public QCPItemEllipse{
     Q_OBJECT
-    Q_INTERFACES(ed::ETradingPlotable)
 
 public:
-    explicit EResizeHandle(ETradingPlot *parent, int halfSize = 6);
+    explicit EResizeHandle(ETradingPlot *parent, int halfSize = 4);
 
     ~EResizeHandle();
 
-    void setActive(bool active) override;
-    void startMoving(const QPointF &mousePos, bool shiftIsPressed) override;
-    bool isMoving() override;
+    void setActive(bool active);
+    void startMoving(const QPointF &mousePos, bool shiftIsPressed);
+    bool isMoving();
 
     QPointF pos() const;
     const QColor &color() const;
