@@ -32,7 +32,7 @@ namespace ed {
 
 class ETradingPlot;
 
-class ED_EXPORT EResizeHandle : public QCPItemEllipse{
+class ED_EXPORT EResizeHandle : public QCPItemEllipse {
     Q_OBJECT
 
 public:

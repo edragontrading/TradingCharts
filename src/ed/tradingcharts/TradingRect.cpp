@@ -237,6 +237,7 @@ void ETradingRect::createTopLeftResize() {
         if (d->mIsDrawing) {
             Q_EMIT drawingCompleted(true);
         }
+        d->mUserLayer->replot();
     });
 
     connect(d->mResizeTopLeft, &EResizeHandle::cancelledMoving, this, [this]() {
@@ -246,6 +247,7 @@ void ETradingRect::createTopLeftResize() {
         if (d->mIsDrawing) {
             Q_EMIT drawingCompleted(false);
         }
+        d->mUserLayer->replot();
     });
 }
 
@@ -267,6 +269,7 @@ void ETradingRect::createBottomRightResize() {
         if (d->mIsDrawing) {
             Q_EMIT drawingCompleted(false);
         }
+        d->mUserLayer->replot();
     });
 
     connect(d->mResizeBottomRight, &EResizeHandle::cancelledMoving, this, [this]() {
@@ -277,6 +280,7 @@ void ETradingRect::createBottomRightResize() {
         if (d->mIsDrawing) {
             Q_EMIT drawingCompleted(true);
         }
+        d->mUserLayer->replot();
     });
 }
 

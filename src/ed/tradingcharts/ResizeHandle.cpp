@@ -99,7 +99,7 @@ EResizeHandle::~EResizeHandle() {
     if (parentPlot()->hasItem(d->mHelperVertical)) {
         parentPlot()->removeItem(d->mHelperVertical);
     }
-    
+
     if (parentPlot()->hasItem(d->mHelperHorizontal)) {
         parentPlot()->removeItem(d->mHelperHorizontal);
     }
@@ -230,8 +230,7 @@ void EResizeHandle::mousePress(QMouseEvent *event) {
         stopMoving();
         if (event->button() == Qt::LeftButton) {
             Q_EMIT completedMoving();
-        }
-        else if (event->button() == Qt::RightButton) {
+        } else if (event->button() == Qt::RightButton) {
             Q_EMIT cancelledMoving();
         }
     }

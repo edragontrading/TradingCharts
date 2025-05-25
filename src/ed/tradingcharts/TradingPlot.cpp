@@ -125,9 +125,9 @@ void ETradingPlot::mousePressEvent(QMouseEvent *event) {
             return;
         }
 
-        ETradingRect* rect = new ETradingRect(this);
+        ETradingRect *rect = new ETradingRect(this);
         rect->startDrawing(event->position());
-        d->mPointDrawing = qobject_cast<QCPAbstractItem*> (rect);
+        d->mPointDrawing = qobject_cast<QCPAbstractItem *>(rect);
         connect(d->mPointDrawing, SIGNAL(drawingCompleted(bool)), this, SLOT(onDrawingCompleted(bool)));
         return;
     }
@@ -142,6 +142,7 @@ void ETradingPlot::mousePressEvent(QMouseEvent *event) {
         d->mPointUnderCursor = nullptr;
         d->mPointSelected->setActive(true);
 
+        unsetCursor();
         if (d->mPointSelected->isResizeable(event->position())) {
             d->mPointSelected->startResizing(event->position(), event->modifiers().testFlag(Qt::ShiftModifier));
         } else {
@@ -221,9 +222,8 @@ void ETradingPlot::onDrawingCompleted(bool cancelled) {
     disconnect(d->mPointDrawing, SIGNAL(drawingCompleted(bool)), this, SLOT(onDrawingCompleted(bool)));
 
     if (cancelled) {
-        if (this->hasItem(qobject_cast<QCPAbstractItem *>(d->mPointDrawing))) {
+        if (this->hasItem(d->mPointDrawing)) {
             this->removeItem(d->mPointDrawing);
-            d->mUserLayer->replot();
         }
     }
 

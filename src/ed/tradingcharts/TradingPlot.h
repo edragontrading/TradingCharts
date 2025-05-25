@@ -45,9 +45,6 @@ public:
     QCPLayer *userLayer() const;
     void setMode(Mode mode);
 
-public Q_SLOTS:
-    void onDrawingCompleted(bool cancelled);
-
 protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
@@ -57,6 +54,7 @@ protected:
 private Q_SLOTS:
     void handleMousePress(QMouseEvent *event);
     void handleMouseWheel(QWheelEvent *event);
+    void onDrawingCompleted(bool cancelled);
 
 Q_SIGNALS:
     void shiftStateChanged(bool);

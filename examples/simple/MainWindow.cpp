@@ -31,13 +31,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     QPushButton *button1 = new QPushButton("Normal", mCentralWidget);
     QPushButton *button2 = new QPushButton("Draw", mCentralWidget);
 
-    connect(button1, &QPushButton::clicked, this, [tradingPlot](bool) {
-        tradingPlot->setMode(ed::ETradingPlot::Mode::pmNone);
-    });
+    connect(button1, &QPushButton::clicked, this,
+            [tradingPlot](bool) { tradingPlot->setMode(ed::ETradingPlot::Mode::pmNone); });
 
-    connect(button2, &QPushButton::clicked, this, [tradingPlot](bool) {
-        tradingPlot->setMode(ed::ETradingPlot::Mode::pmDrawingRect);
-    });
+    connect(button2, &QPushButton::clicked, this,
+            [tradingPlot](bool) { tradingPlot->setMode(ed::ETradingPlot::Mode::pmDrawingRect); });
 
     layout_button->addWidget(button1);
     layout_button->addWidget(button2);

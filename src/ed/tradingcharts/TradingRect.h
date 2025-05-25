@@ -44,8 +44,8 @@ public:
     void setActive(bool active) override;
     void startMoving(const QPointF &mousePos, bool shiftIsPressed) override;
     bool isResizeable(const QPointF &mousePos) override;
-    void startResizing(const QPointF& mousePos, bool shiftIsPressed) override;
-    void startDrawing(const QPointF& mousePos) override;
+    void startResizing(const QPointF &mousePos, bool shiftIsPressed) override;
+    void startDrawing(const QPointF &mousePos) override;
 
     QPointF pos() const;
     const QColor &color() const;
@@ -72,8 +72,8 @@ private Q_SLOTS:
 private:
     void createTopLeftResize();
     void createBottomRightResize();
-    bool isTopLeftResize(const QPointF& mousePos);
-    bool isBottomRightResize(const QPointF& mousePos);
+    bool isTopLeftResize(const QPointF &mousePos);
+    bool isBottomRightResize(const QPointF &mousePos);
 
 private:
     struct Private;
