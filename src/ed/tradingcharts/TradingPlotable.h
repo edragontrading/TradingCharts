@@ -32,6 +32,9 @@ class ED_EXPORT ETradingPlotable {
 public:
     virtual ~ETradingPlotable() = default;
 
+    virtual void init() = 0;
+    virtual void setVisible(bool visible) = 0;
+    virtual void setChoosen(bool select) = 0;
     virtual void setActive(bool active) = 0;
     virtual void startMoving(const QPointF& mousePos, bool shiftIsPressed) = 0;
     virtual bool isResizeable(const QPointF& mousePos) = 0;

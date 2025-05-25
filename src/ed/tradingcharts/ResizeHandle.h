@@ -42,7 +42,7 @@ public:
     };
 
 public:
-    explicit EResizeHandle(ETradingPlot *parent, int halfSize = 4);
+    explicit EResizeHandle(ETradingPlot *parent, int halfSize = 5);
 
     ~EResizeHandle();
 

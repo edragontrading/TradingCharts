@@ -83,9 +83,9 @@ EResizeHandle::EResizeHandle(ETradingPlot *parent, int halfSize) : QCPItemEllips
     bottomRight->setCoords(halfSize, halfSize);
 
     setSelectable(false);
-    setColor(QColor(35, 125, 100, 255));
-    setPen(QPen(Qt::blue, 3));
-    setSelectedPen(QPen(Qt::red, 3));
+    setColor(QColor(0xd1, 0xd4, 0xdc, 255));
+    setPen(QPen(Qt::blue, 1));
+    setSelectedPen(QPen(Qt::blue, 2));
     setLayer(d->mUserLayer);
 
     d->mMoveTimer->setInterval(25);  // 40 FPS
@@ -109,7 +109,6 @@ EResizeHandle::~EResizeHandle() {
 
 void EResizeHandle::setActive(bool isActive) {
     setSelected(isActive);
-    Q_EMIT(isActive ? activated() : disactivated());
 }
 
 void EResizeHandle::startMoving(Mode mode, const QPointF &mousePos, bool shiftIsPressed) {
@@ -145,6 +144,7 @@ void EResizeHandle::startMoving(Mode mode, const QPointF &mousePos, bool shiftIs
     parentPlot()->grabKeyboard();
     QApplication::setOverrideCursor(Qt::ClosedHandCursor);
 
+    d->mUserLayer->replot();
     Q_EMIT startingMoving();
 }
 
@@ -180,8 +180,6 @@ void EResizeHandle::stopMoving() {
 
     d->mHelperVertical->setVisible(false);
     d->mHelperHorizontal->setVisible(false);
-
-    d->mUserLayer->replot();
 
     parentPlot()->releaseKeyboard();
     QApplication::restoreOverrideCursor();

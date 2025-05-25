@@ -63,9 +63,9 @@ ETradingRect::ETradingRect(ETradingPlot *parent) : QCPItemRect(parent), d(new Pr
     setAllowFilledRect(false);
 
     setSelectable(true);
-    setColor(QColor(35, 125, 100, 255));
-    setPen(QPen(Qt::blue));
-    setSelectedPen(QPen(Qt::red, 1));
+    setColor(QColor(0x9c, 0x27, 0xb0, 51));
+    setPen(QColor(0x9c, 0x27, 0xb0, 255));
+    setSelectedPen(QColor(0x9c, 0x27, 0xb0, 255));
     setLayer(d->mUserLayer);
 
     d->mMoveTimer->setInterval(25);  // 40 FPS
@@ -86,16 +86,31 @@ ETradingRect::~ETradingRect() {
     delete d;
 }
 
+void ETradingRect::init() {
+    createTopLeftResize();
+    createBottomRightResize();
+}
+
+void ETradingRect::setChoosen(bool on) {
+    setSelected(on);
+
+    d->mResizeTopLeft->setSelected(on);
+    d->mResizeBottomRight->setSelected(on);
+
+    if (!on) {
+        d->mResizeTopLeft->setVisible(on);
+        d->mResizeBottomRight->setVisible(on);
+    }
+}
+
+void ETradingRect::setVisible(bool on) {
+    QCPItemRect::setVisible(on);
+}
+
 void ETradingRect::setActive(bool isActive) {
     setSelected(isActive);
-
     d->mResizeTopLeft->setVisible(isActive);
     d->mResizeBottomRight->setVisible(isActive);
-
-    if (!isActive) {
-        d->mResizeTopLeft->setActive(isActive);
-        d->mResizeBottomRight->setActive(isActive);
-    }
 
     Q_EMIT(isActive ? activated() : disactivated());
 }
@@ -112,6 +127,7 @@ void ETradingRect::startMoving(const QPointF &mousePos, bool shiftIsPressed) {
 
     parentPlot()->grabKeyboard();
     QApplication::setOverrideCursor(Qt::ClosedHandCursor);
+    d->mUserLayer->replot();
 }
 
 bool ETradingRect::isResizeable(const QPointF &mousePos) {
@@ -147,8 +163,6 @@ void ETradingRect::startDrawing(const QPointF &mousePos) {
     moveCoord(x, y, x, y);
 
     d->mResizeBottomRight->startMoving(EResizeHandle::Mode::mDrawing, mousePos, false);
-
-    d->mUserLayer->replot();
 }
 
 const QColor &ETradingRect::color() const {
@@ -158,10 +172,6 @@ const QColor &ETradingRect::color() const {
 void ETradingRect::setColor(const QColor &color) {
     setBrush(color);
     setSelectedBrush(color);
-}
-
-void ETradingRect::setVisible(bool on) {
-    QCPItemRect::setVisible(on);
 }
 
 void ETradingRect::onCompletedMoving() {
@@ -186,9 +196,6 @@ void ETradingRect::moveCoord(double x1, double y1, double x2, double y2) {
 
     topLeft->setCoords(x1, y1);
     bottomRight->setCoords(x2, y2);
-
-    createTopLeftResize();
-    createBottomRightResize();
 
     d->mResizeTopLeft->moveCoord(x1, y1);
     d->mResizeBottomRight->moveCoord(x2, y2);
@@ -231,23 +238,17 @@ void ETradingRect::createTopLeftResize() {
         connect(d->mResizeTopLeft, SIGNAL(moved(const QPointF &)), this, SLOT(topLeftMoving(const QPointF &)));
     });
     connect(d->mResizeTopLeft, &EResizeHandle::completedMoving, this, [this]() {
-        this->d->mResizeTopLeft->setActive(false);
-        disconnect(d->mResizeTopLeft, SIGNAL(moved(const QPointF &)), this, SLOT(topLeftMoving(const QPointF &)));
-
+        resizeTopLeftStoppedMoving();
         if (d->mIsDrawing) {
             Q_EMIT drawingCompleted(true);
         }
-        d->mUserLayer->replot();
     });
 
     connect(d->mResizeTopLeft, &EResizeHandle::cancelledMoving, this, [this]() {
-        this->d->mResizeTopLeft->setActive(false);
-        disconnect(d->mResizeTopLeft, SIGNAL(moved(const QPointF &)), this, SLOT(topLeftMoving(const QPointF &)));
-
+        resizeTopLeftStoppedMoving();
         if (d->mIsDrawing) {
             Q_EMIT drawingCompleted(false);
         }
-        d->mUserLayer->replot();
     });
 }
 
@@ -263,25 +264,30 @@ void ETradingRect::createBottomRightResize() {
         connect(d->mResizeBottomRight, SIGNAL(moved(const QPointF &)), this, SLOT(bottomRightMoving(const QPointF &)));
     });
     connect(d->mResizeBottomRight, &EResizeHandle::completedMoving, this, [this]() {
-        this->d->mResizeBottomRight->setActive(false);
-        disconnect(d->mResizeBottomRight, SIGNAL(moved(const QPointF &)), this,
-                   SLOT(bottomRightMoving(const QPointF &)));
+        resizeBottomRightStoppedMoving();
         if (d->mIsDrawing) {
             Q_EMIT drawingCompleted(false);
         }
-        d->mUserLayer->replot();
     });
 
     connect(d->mResizeBottomRight, &EResizeHandle::cancelledMoving, this, [this]() {
-        this->d->mResizeBottomRight->setActive(false);
-        disconnect(d->mResizeBottomRight, SIGNAL(moved(const QPointF &)), this,
-                   SLOT(bottomRightMoving(const QPointF &)));
-
+        resizeBottomRightStoppedMoving();
         if (d->mIsDrawing) {
             Q_EMIT drawingCompleted(true);
         }
-        d->mUserLayer->replot();
     });
+}
+
+void ETradingRect::resizeTopLeftStoppedMoving() {
+    this->d->mResizeTopLeft->setActive(!d->mIsDrawing);
+    this->d->mResizeBottomRight->setActive(!d->mIsDrawing);
+    disconnect(d->mResizeTopLeft, SIGNAL(moved(const QPointF &)), this, SLOT(topLeftMoving(const QPointF &)));
+}
+
+void ETradingRect::resizeBottomRightStoppedMoving() {
+    this->d->mResizeTopLeft->setActive(!d->mIsDrawing);
+    this->d->mResizeBottomRight->setActive(!d->mIsDrawing);
+    disconnect(d->mResizeBottomRight, SIGNAL(moved(const QPointF &)), this, SLOT(bottomRightMoving(const QPointF &)));
 }
 
 bool ETradingRect::isTopLeftResize(const QPointF &mousePos) {

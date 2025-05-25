@@ -125,7 +125,12 @@ void ETradingPlot::mousePressEvent(QMouseEvent *event) {
             return;
         }
 
+        if (d->mPointSelected != nullptr) {
+            d->mPointSelected->setChoosen(false);
+        }
+
         ETradingRect *rect = new ETradingRect(this);
+        rect->init();
         rect->startDrawing(event->position());
         d->mPointDrawing = qobject_cast<QCPAbstractItem *>(rect);
         connect(d->mPointDrawing, SIGNAL(drawingCompleted(bool)), this, SLOT(onDrawingCompleted(bool)));
@@ -138,9 +143,13 @@ void ETradingPlot::mousePressEvent(QMouseEvent *event) {
             d->mPointUnderCursor->setActive(false);
         }
 
+        if (d->mPointSelected != nullptr && d->mPointSelected != plotPoint) {
+            d->mPointSelected->setChoosen(false);
+        }
+
         d->mPointSelected = plotPoint;
         d->mPointUnderCursor = nullptr;
-        d->mPointSelected->setActive(true);
+        d->mPointSelected->setChoosen(true);
 
         unsetCursor();
         if (d->mPointSelected->isResizeable(event->position())) {
@@ -153,7 +162,7 @@ void ETradingPlot::mousePressEvent(QMouseEvent *event) {
 
     bool replot = false;
     if (d->mPointSelected != nullptr) {
-        d->mPointSelected->setActive(false);
+        d->mPointSelected->setChoosen(false);
         d->mPointSelected = nullptr;
         replot = true;
     }
@@ -220,14 +229,13 @@ void ETradingPlot::onDrawingCompleted(bool cancelled) {
     }
 
     disconnect(d->mPointDrawing, SIGNAL(drawingCompleted(bool)), this, SLOT(onDrawingCompleted(bool)));
-
     if (cancelled) {
         if (this->hasItem(d->mPointDrawing)) {
             this->removeItem(d->mPointDrawing);
         }
     }
-
     d->mPointDrawing = nullptr;
+    d->mUserLayer->replot();
 }
 
 void ETradingPlot::handleMousePress(QMouseEvent *event) {

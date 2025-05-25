@@ -41,6 +41,9 @@ public:
 
     ~ETradingRect();
 
+    void init() override;
+    void setVisible(bool visible) override;
+    void setChoosen(bool on) override;
     void setActive(bool active) override;
     void startMoving(const QPointF &mousePos, bool shiftIsPressed) override;
     bool isResizeable(const QPointF &mousePos) override;
@@ -59,7 +62,6 @@ Q_SIGNALS:
     void completedMoving();
 
 public Q_SLOTS:
-    void setVisible(bool on);
     void moveCoord(double x1, double y1, double x2, double y2);
 
 private Q_SLOTS:
@@ -72,6 +74,8 @@ private Q_SLOTS:
 private:
     void createTopLeftResize();
     void createBottomRightResize();
+    void resizeTopLeftStoppedMoving();
+    void resizeBottomRightStoppedMoving();
     bool isTopLeftResize(const QPointF &mousePos);
     bool isBottomRightResize(const QPointF &mousePos);
 
