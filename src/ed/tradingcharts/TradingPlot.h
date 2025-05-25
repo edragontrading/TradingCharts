@@ -33,10 +33,20 @@ class ED_EXPORT ETradingPlot : public QCustomPlot {
     Q_OBJECT
 
 public:
+    enum Mode {
+        pmNone,
+        pmDrawingRect,
+    };
+
+public:
     explicit ETradingPlot(QWidget *parent = nullptr);
     ~ETradingPlot() override;
 
     QCPLayer *userLayer() const;
+    void setMode(Mode mode);
+
+public Q_SLOTS:
+    void onDrawingCompleted(bool cancelled);
 
 protected:
     void mousePressEvent(QMouseEvent *event) override;
@@ -50,6 +60,7 @@ private Q_SLOTS:
 
 Q_SIGNALS:
     void shiftStateChanged(bool);
+    void escapeKeyCancelled();
 
 private:
     struct Private;

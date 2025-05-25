@@ -19,19 +19,34 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     setWindowTitle("MainWindow");
     setObjectName("MainWindow");
 
-    QWidget *centralWidget = new QWidget;
-    QVBoxLayout *layout_central = new QVBoxLayout(centralWidget);
+    mCentralWidget = new QWidget(parent);
+    QVBoxLayout *layout_central = new QVBoxLayout(mCentralWidget);
     layout_central->setSpacing(0);
     layout_central->setContentsMargins(0, 0, 0, 0);
 
-    ed::ETradingPlot *tradingPlot = new ed::ETradingPlot(centralWidget);
+    ed::ETradingPlot *tradingPlot = new ed::ETradingPlot(mCentralWidget);
 
-    ed::ETradingRect *handle = new ed::ETradingRect(tradingPlot);
-    handle->moveCoord(30, 40, 40, 20);
+    QWidget *buttonWidget = new QWidget(parent);
+    QHBoxLayout *layout_button = new QHBoxLayout(buttonWidget);
+    QPushButton *button1 = new QPushButton("Normal", mCentralWidget);
+    QPushButton *button2 = new QPushButton("Draw", mCentralWidget);
+
+    connect(button1, &QPushButton::clicked, this, [tradingPlot](bool) {
+        tradingPlot->setMode(ed::ETradingPlot::Mode::pmNone);
+    });
+
+    connect(button2, &QPushButton::clicked, this, [tradingPlot](bool) {
+        tradingPlot->setMode(ed::ETradingPlot::Mode::pmDrawingRect);
+    });
+
+    layout_button->addWidget(button1);
+    layout_button->addWidget(button2);
 
     layout_central->addWidget(tradingPlot);
-    setCentralWidget(centralWidget);
+    layout_central->addWidget(buttonWidget);
+    setCentralWidget(mCentralWidget);
 }
 
 MainWindow::~MainWindow() {
+    delete mCentralWidget;
 }

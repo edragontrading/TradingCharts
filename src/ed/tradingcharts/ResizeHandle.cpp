@@ -38,11 +38,11 @@ struct EResizeHandle::Private {
     QTimer *mMoveTimer;
     QPointF mCurWantedPosPx;
 
-    bool mIsMoving;
     bool mIsChangingOnlyOneCoordinate;
     QCPItemStraightLine *mHelperVertical;
     QCPItemStraightLine *mHelperHorizontal;
 
+    Mode mMode;
     QCPLayer *mUserLayer;
 };
 
@@ -53,11 +53,11 @@ EResizeHandle::EResizeHandle(ETradingPlot *parent, int halfSize) : QCPItemEllips
     d->mMoveTimer = new QTimer();
     d->mCurWantedPosPx = QPointF();
     d->mIsChangingOnlyOneCoordinate = false;
-    d->mIsMoving = false;
     d->mCenterTracer = new QCPItemTracer(parent);
     d->mCenterTracer->setStyle(QCPItemTracer::tsNone);
     d->mCenterTracer->setInterpolating(true);
     d->mUserLayer = parent->userLayer();
+    d->mMode = Mode::mResizing;
 
     d->mHelperVertical = new QCPItemStraightLine(parentPlot());
     d->mHelperVertical->setAntialiased(false);
@@ -112,8 +112,8 @@ void EResizeHandle::setActive(bool isActive) {
     Q_EMIT(isActive ? activated() : disactivated());
 }
 
-void EResizeHandle::startMoving(const QPointF &mousePos, bool shiftIsPressed) {
-    d->mIsMoving = true;
+void EResizeHandle::startMoving(Mode mode, const QPointF &mousePos, bool shiftIsPressed) {
+    d->mMode = mode;
     d->mGripDelta.setX(parentPlot()->xAxis->coordToPixel(d->mCenterTracer->position->key()) - mousePos.x());
     d->mGripDelta.setY(parentPlot()->yAxis->coordToPixel(d->mCenterTracer->position->value()) - mousePos.y());
 
@@ -134,17 +134,18 @@ void EResizeHandle::startMoving(const QPointF &mousePos, bool shiftIsPressed) {
     d->mHelperHorizontal->setVisible(shiftIsPressed);
 
     connect(parentPlot(), SIGNAL(mouseMove(QMouseEvent *)), this, SLOT(onMouseMove(QMouseEvent *)));
-    connect(parentPlot(), SIGNAL(mouseRelease(QMouseEvent *)), this, SLOT(stopMoving()));
-    connect(parentPlot(), SIGNAL(shiftStateChanged(bool)), this, SLOT(onShiftStateChanged(bool)));
+    connect(parentPlot(), SIGNAL(mouseRelease(QMouseEvent *)), this, SLOT(mouseRelease(QMouseEvent *)));
+    connect(parentPlot(), SIGNAL(mousePress(QMouseEvent *)), this, SLOT(mousePress(QMouseEvent *)));
+    connect(parentPlot(), SIGNAL(escapeKeyCancelled()), this, SLOT(onCancelled()));
+
+    if (d->mMode == mResizing) {
+        connect(parentPlot(), SIGNAL(shiftStateChanged(bool)), this, SLOT(onShiftStateChanged(bool)));
+    }
 
     parentPlot()->grabKeyboard();
     QApplication::setOverrideCursor(Qt::ClosedHandCursor);
 
     Q_EMIT startingMoving();
-}
-
-bool EResizeHandle::isMoving() {
-    return d->mIsMoving;
 }
 
 QPointF EResizeHandle::pos() const {
@@ -165,11 +166,14 @@ void EResizeHandle::setVisible(bool on) {
 }
 
 void EResizeHandle::stopMoving() {
-    d->mIsMoving = false;
-
     disconnect(parentPlot(), SIGNAL(mouseMove(QMouseEvent *)), this, SLOT(onMouseMove(QMouseEvent *)));
-    disconnect(parentPlot(), SIGNAL(mouseRelease(QMouseEvent *)), this, SLOT(stopMoving()));
-    disconnect(parentPlot(), SIGNAL(shiftStateChanged(bool)), this, SLOT(onShiftStateChanged(bool)));
+    disconnect(parentPlot(), SIGNAL(mouseRelease(QMouseEvent *)), this, SLOT(mouseRelease(QMouseEvent *)));
+    disconnect(parentPlot(), SIGNAL(mousePress(QMouseEvent *)), this, SLOT(mousePress(QMouseEvent *)));
+    disconnect(parentPlot(), SIGNAL(escapeKeyCancelled()), this, SLOT(onCancelled()));
+
+    if (d->mMode == mResizing) {
+        disconnect(parentPlot(), SIGNAL(shiftStateChanged(bool)), this, SLOT(onShiftStateChanged(bool)));
+    }
 
     d->mMoveTimer->stop();
     moveToWantedPos();
@@ -181,8 +185,6 @@ void EResizeHandle::stopMoving() {
 
     parentPlot()->releaseKeyboard();
     QApplication::restoreOverrideCursor();
-
-    Q_EMIT stoppedMoving();
 }
 
 void EResizeHandle::moveCoord(double x, double y) {
@@ -216,10 +218,22 @@ void EResizeHandle::onMouseMove(QMouseEvent *event) {
     d->mCurWantedPosPx = QPointF(event->position().x() + d->mGripDelta.x(), event->position().y() + d->mGripDelta.y());
 }
 
-void EResizeHandle::moveToWantedPos() {
-    if (!d->mCurWantedPosPx.isNull()) {
-        movePixel(d->mCurWantedPosPx.x(), d->mCurWantedPosPx.y());
-        d->mCurWantedPosPx = QPointF();
+void EResizeHandle::mouseRelease(QMouseEvent *event) {
+    if (d->mMode == mResizing) {
+        stopMoving();
+        Q_EMIT completedMoving();
+    }
+}
+
+void EResizeHandle::mousePress(QMouseEvent *event) {
+    if (d->mMode == mDrawing) {
+        stopMoving();
+        if (event->button() == Qt::LeftButton) {
+            Q_EMIT completedMoving();
+        }
+        else if (event->button() == Qt::RightButton) {
+            Q_EMIT cancelledMoving();
+        }
     }
 }
 
@@ -229,6 +243,18 @@ void EResizeHandle::onShiftStateChanged(bool shiftPressed) {
         d->mHelperVertical->setVisible(shiftPressed);
         d->mHelperHorizontal->setVisible(shiftPressed);
         moveCoord(d->mLastWantedPos.x(), d->mLastWantedPos.y());
+    }
+}
+
+void EResizeHandle::onCancelled() {
+    stopMoving();
+    Q_EMIT cancelledMoving();
+}
+
+void EResizeHandle::moveToWantedPos() {
+    if (!d->mCurWantedPosPx.isNull()) {
+        movePixel(d->mCurWantedPosPx.x(), d->mCurWantedPosPx.y());
+        d->mCurWantedPosPx = QPointF();
     }
 }
 }  // namespace ed

@@ -39,7 +39,7 @@ add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 
 set(LIBRARY_NAME "qt${QT_VERSION_MAJOR}-edtradingcharts")
 
-if(ED_BUILD_STATIC)
+if(BUILD_STATIC)
     add_library(${LIBRARY_NAME} STATIC ${RESOURCES_RCC} ${TRADING_CHARTS_SRCS} ${TRADING_CHARTS_HEADERS})
     target_compile_definitions( ${LIBRARY_NAME} PUBLIC ED_TRADINGCHARTS_STATIC)
 else()

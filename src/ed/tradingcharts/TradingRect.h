@@ -43,10 +43,9 @@ public:
 
     void setActive(bool active) override;
     void startMoving(const QPointF &mousePos, bool shiftIsPressed) override;
-    bool isMoving() override;
     bool isResizeable(const QPointF &mousePos) override;
-    bool isResizing() override;
     void startResizing(const QPointF& mousePos, bool shiftIsPressed) override;
+    void startDrawing(const QPointF& mousePos) override;
 
     QPointF pos() const;
     const QColor &color() const;
@@ -57,7 +56,7 @@ Q_SIGNALS:
     void disactivated();  ///< emitted when cursor leave us
 
     void moved(const QPointF &pos);
-    void stoppedMoving();
+    void completedMoving();
 
 public Q_SLOTS:
     void setVisible(bool on);
@@ -65,7 +64,7 @@ public Q_SLOTS:
 
 private Q_SLOTS:
     void onMouseMove(QMouseEvent *event);
-    void stopMoving();
+    void onCompletedMoving();
     void moveToWantedPos();
     void topLeftMoving(const QPointF &pos);
     void bottomRightMoving(const QPointF &pos);

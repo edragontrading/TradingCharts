@@ -36,13 +36,18 @@ class ED_EXPORT EResizeHandle : public QCPItemEllipse{
     Q_OBJECT
 
 public:
+    enum Mode {
+        mResizing,
+        mDrawing,
+    };
+
+public:
     explicit EResizeHandle(ETradingPlot *parent, int halfSize = 4);
 
     ~EResizeHandle();
 
     void setActive(bool active);
-    void startMoving(const QPointF &mousePos, bool shiftIsPressed);
-    bool isMoving();
+    void startMoving(Mode mode, const QPointF &mousePos, bool shiftIsPressed);
 
     QPointF pos() const;
     const QColor &color() const;
@@ -54,18 +59,24 @@ Q_SIGNALS:
 
     void startingMoving();
     void moved(const QPointF &pos);
-    void stoppedMoving();
+    void completedMoving();
+    void cancelledMoving();
 
 public Q_SLOTS:
     void setVisible(bool on);
     void moveCoord(double x, double y);
 
 private Q_SLOTS:
-    void movePixel(double x, double y);
     void onMouseMove(QMouseEvent *event);
-    void stopMoving();
-    void moveToWantedPos();
+    void mouseRelease(QMouseEvent *event);
+    void mousePress(QMouseEvent *event);
     void onShiftStateChanged(bool shiftPressed);
+    void stopMoving();
+    void onCancelled();
+    void moveToWantedPos();
+
+private:
+    void movePixel(double x, double y);
 
 private:
     struct Private;

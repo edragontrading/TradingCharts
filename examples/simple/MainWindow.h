@@ -16,6 +16,7 @@ public:
 
 private:
     /// The menu manager for the dock widgets.
+    QWidget *mCentralWidget;
 };
 
 #endif  // MAINWINDOW_H

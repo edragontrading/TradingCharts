@@ -23,22 +23,28 @@
 
 #include <ed/tradingcharts/TradingPlot.h>
 #include <ed/tradingcharts/TradingPlotable.h>
+#include <ed/tradingcharts/TradingRect.h>
 
 namespace ed {
 
 struct ETradingPlot::Private {
     Private() = default;
-
     QCPLayer *mUserLayer;
+    ETradingPlot::Mode mPlotMode;
+    QCP::Interactions mInteractions;
     ETradingPlotable *mPointUnderCursor;
     ETradingPlotable *mPointSelected;
+    QCPAbstractItem *mPointDrawing;
 };
 
 ETradingPlot::ETradingPlot(QWidget *parent) : QCustomPlot(parent), d(new Private) {
     d->mPointUnderCursor = nullptr;
     d->mPointSelected = nullptr;
+    d->mPointDrawing = nullptr;
+    d->mPlotMode = pmNone;
+    d->mInteractions = QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectAxes | QCP::iSelectPlottables;
 
-    setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectAxes | QCP::iSelectPlottables);
+    setInteractions(d->mInteractions);
     setAutoAddPlottableToLegend(false);
     plotLayout()->setRowSpacing(0);
     plotLayout()->setColumnSpacing(0);
@@ -91,77 +97,111 @@ ETradingPlot::ETradingPlot(QWidget *parent) : QCustomPlot(parent), d(new Private
 }
 
 ETradingPlot::~ETradingPlot() {
-    qDebug() << Q_FUNC_INFO  << "start";
-    qDebug() << Q_FUNC_INFO  << "end";
+    delete d;
 }
 
 QCPLayer *ETradingPlot::userLayer() const {
     return d->mUserLayer;
 }
 
+void ETradingPlot::setMode(Mode mode) {
+    d->mPlotMode = mode;
+    if (mode == pmNone) {
+        this->setInteractions(d->mInteractions);
+    } else {
+        this->setInteractions(QCP::iNone);
+    }
+}
+
 void ETradingPlot::mousePressEvent(QMouseEvent *event) {
-    if (event->button() == Qt::LeftButton) {
-        ETradingPlotable *plotPoint = qobject_cast<ETradingPlotable *>(itemAt(event->position(), true));
-        if (nullptr != plotPoint) {
-            if (d->mPointUnderCursor != nullptr && d->mPointUnderCursor != plotPoint) {
-                d->mPointUnderCursor->setActive(false);
-            }
+    if (event->button() != Qt::LeftButton) {
+        QCustomPlot::mousePressEvent(event);
+        return;
+    }
 
-            d->mPointSelected = plotPoint;
-            d->mPointUnderCursor = nullptr;
-            d->mPointSelected->setActive(true);
-            
-            if (d->mPointSelected->isResizeable(event->position())) {
-                d->mPointSelected->startResizing(event->position(), event->modifiers().testFlag(Qt::ShiftModifier));
-            }
-            else {
-                d->mPointSelected->startMoving(event->position(), event->modifiers().testFlag(Qt::ShiftModifier));
-            }
-
-            d->mUserLayer->replot();
-
+    if (d->mPlotMode != pmNone) {
+        if (d->mPointDrawing != nullptr) {
+            QCustomPlot::mousePressEvent(event);
             return;
-        } else if (d->mPointSelected != nullptr) {
-            d->mPointSelected->setActive(false);
-            d->mPointSelected = nullptr;
-            d->mUserLayer->replot();
         }
+
+        ETradingRect* rect = new ETradingRect(this);
+        rect->startDrawing(event->position());
+        d->mPointDrawing = qobject_cast<QCPAbstractItem*> (rect);
+        connect(d->mPointDrawing, SIGNAL(drawingCompleted(bool)), this, SLOT(onDrawingCompleted(bool)));
+        return;
+    }
+
+    ETradingPlotable *plotPoint = qobject_cast<ETradingPlotable *>(itemAt(event->position(), true));
+    if (nullptr != plotPoint) {
+        if (d->mPointUnderCursor != nullptr && d->mPointUnderCursor != plotPoint) {
+            d->mPointUnderCursor->setActive(false);
+        }
+
+        d->mPointSelected = plotPoint;
+        d->mPointUnderCursor = nullptr;
+        d->mPointSelected->setActive(true);
+
+        if (d->mPointSelected->isResizeable(event->position())) {
+            d->mPointSelected->startResizing(event->position(), event->modifiers().testFlag(Qt::ShiftModifier));
+        } else {
+            d->mPointSelected->startMoving(event->position(), event->modifiers().testFlag(Qt::ShiftModifier));
+        }
+        return;
+    }
+
+    bool replot = false;
+    if (d->mPointSelected != nullptr) {
+        d->mPointSelected->setActive(false);
+        d->mPointSelected = nullptr;
+        replot = true;
     }
 
     QCustomPlot::mousePressEvent(event);
+    if (replot) {
+        d->mUserLayer->replot();
+    }
 }
 
 void ETradingPlot::mouseMoveEvent(QMouseEvent *event) {
     QCustomPlot::mouseMoveEvent(event);
 
-    if (event->buttons() == Qt::NoButton) {
-        ETradingPlotable *plotPoint = qobject_cast<ETradingPlotable *>(itemAt(event->position(), true));
+    if (event->buttons() != Qt::NoButton) {
+        return;
+    }
 
-        if (plotPoint != d->mPointUnderCursor) {
-            if (d->mPointUnderCursor == nullptr) {
-                // cursor moved from empty space to item
-                plotPoint->setActive(true);
-                setCursor(Qt::OpenHandCursor);
-            } else if (plotPoint == nullptr) {
-                // cursor move from item to empty space
-                if (d->mPointUnderCursor != d->mPointSelected) {
-                    d->mPointUnderCursor->setActive(false);
-                }
-                unsetCursor();
-            } else {
-                // cursor moved from item to item
+    if (d->mPlotMode != Mode::pmNone) {
+        return;
+    }
+
+    ETradingPlotable *plotPoint = qobject_cast<ETradingPlotable *>(itemAt(event->position(), true));
+
+    if (plotPoint != d->mPointUnderCursor) {
+        if (d->mPointUnderCursor == nullptr) {
+            // cursor moved from empty space to item
+            plotPoint->setActive(true);
+            setCursor(Qt::OpenHandCursor);
+        } else if (plotPoint == nullptr) {
+            // cursor move from item to empty space
+            if (d->mPointUnderCursor != d->mPointSelected) {
                 d->mPointUnderCursor->setActive(false);
-                plotPoint->setActive(true);
             }
-            d->mPointUnderCursor = plotPoint;
-            d->mUserLayer->replot();
+            unsetCursor();
+        } else {
+            // cursor moved from item to item
+            d->mPointUnderCursor->setActive(false);
+            plotPoint->setActive(true);
         }
+        d->mPointUnderCursor = plotPoint;
+        d->mUserLayer->replot();
     }
 }
 
 void ETradingPlot::keyPressEvent(QKeyEvent *event) {
     if (event->key() == Qt::Key_Shift) {
         Q_EMIT shiftStateChanged(true);
+    } else if (event->key() == Qt::Key_Escape) {
+        Q_EMIT escapeKeyCancelled();
     }
     QCustomPlot::keyPressEvent(event);
 }
@@ -171,6 +211,23 @@ void ETradingPlot::keyReleaseEvent(QKeyEvent *event) {
         Q_EMIT shiftStateChanged(false);
     }
     QCustomPlot::keyReleaseEvent(event);
+}
+
+void ETradingPlot::onDrawingCompleted(bool cancelled) {
+    if (d->mPointDrawing == nullptr) {
+        return;
+    }
+
+    disconnect(d->mPointDrawing, SIGNAL(drawingCompleted(bool)), this, SLOT(onDrawingCompleted(bool)));
+
+    if (cancelled) {
+        if (this->hasItem(qobject_cast<QCPAbstractItem *>(d->mPointDrawing))) {
+            this->removeItem(d->mPointDrawing);
+            d->mUserLayer->replot();
+        }
+    }
+
+    d->mPointDrawing = nullptr;
 }
 
 void ETradingPlot::handleMousePress(QMouseEvent *event) {

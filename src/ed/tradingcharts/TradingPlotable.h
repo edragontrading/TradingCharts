@@ -33,16 +33,10 @@ public:
     virtual ~ETradingPlotable() = default;
 
     virtual void setActive(bool active) = 0;
-
     virtual void startMoving(const QPointF& mousePos, bool shiftIsPressed) = 0;
-
-    virtual bool isMoving() = 0;
-
     virtual bool isResizeable(const QPointF &mousePos) = 0;
-
     virtual void startResizing(const QPointF& mousePos, bool shiftIsPressed) = 0;
-
-    virtual bool isResizing() = 0;
+    virtual void startDrawing(const QPointF& mousePos) = 0;
 };
 }  // namespace ed
 
