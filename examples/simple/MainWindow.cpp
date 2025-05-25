@@ -29,7 +29,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     QWidget *buttonWidget = new QWidget(parent);
     QHBoxLayout *layout_button = new QHBoxLayout(buttonWidget);
     QPushButton *button1 = new QPushButton("Normal", mCentralWidget);
-    QPushButton *button2 = new QPushButton("Draw", mCentralWidget);
+    QPushButton *button2 = new QPushButton("Rect", mCentralWidget);
+    QPushButton *button3 = new QPushButton("Ellipse", mCentralWidget);
 
     connect(button1, &QPushButton::clicked, this,
             [tradingPlot](bool) { tradingPlot->setMode(ed::ETradingPlot::Mode::pmNone); });
@@ -37,10 +38,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     connect(button2, &QPushButton::clicked, this,
             [tradingPlot](bool) { tradingPlot->setMode(ed::ETradingPlot::Mode::pmDrawingRect); });
 
+    connect(button3, &QPushButton::clicked, this,
+            [tradingPlot](bool) { tradingPlot->setMode(ed::ETradingPlot::Mode::pmDrawingEllipse); });
+
     layout_button->addWidget(button1);
     layout_button->addWidget(button2);
+    layout_button->addWidget(button3);
 
-    layout_central->addWidget(tradingPlot);
+    layout_central->addWidget(tradingPlot, 1);
     layout_central->addWidget(buttonWidget);
     setCentralWidget(mCentralWidget);
 }

@@ -56,16 +56,19 @@ EResizeHandle::EResizeHandle(ETradingPlot *parent, int halfSize) : QCPItemEllips
     d->mCenterTracer = new QCPItemTracer(parent);
     d->mCenterTracer->setStyle(QCPItemTracer::tsNone);
     d->mCenterTracer->setInterpolating(true);
+    d->mCenterTracer->setSelectable(false);
     d->mUserLayer = parent->userLayer();
     d->mMode = Mode::mResizing;
 
     d->mHelperVertical = new QCPItemStraightLine(parentPlot());
     d->mHelperVertical->setAntialiased(false);
     d->mHelperVertical->setLayer(d->mUserLayer);
+    d->mHelperVertical->setSelectable(false);
 
     d->mHelperHorizontal = new QCPItemStraightLine(parentPlot());
     d->mHelperHorizontal->setAntialiased(false);
     d->mHelperHorizontal->setLayer(d->mUserLayer);
+    d->mHelperHorizontal->setSelectable(false);
 
     static const QPen linesPen(Qt::darkGray, 0, Qt::DashLine);
     d->mHelperHorizontal->setPen(linesPen);

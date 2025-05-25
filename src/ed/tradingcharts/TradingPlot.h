@@ -36,14 +36,17 @@ public:
     enum Mode {
         pmNone,
         pmDrawingRect,
+        pmDrawingEllipse,
     };
 
 public:
     explicit ETradingPlot(QWidget *parent = nullptr);
     ~ETradingPlot() override;
 
-    QCPLayer *userLayer() const;
     void setMode(Mode mode);
+    QCPLayer *userLayer() const;
+    QPointF coordsToPixels(double x, double y);
+    QPointF pixelsToCoords(double x, double y);
 
 protected:
     void mousePressEvent(QMouseEvent *event) override;
@@ -59,6 +62,9 @@ private Q_SLOTS:
 Q_SIGNALS:
     void shiftStateChanged(bool);
     void escapeKeyCancelled();
+
+private:
+    QCPAbstractItem *createDrawingItem(QMouseEvent *event);
 
 private:
     struct Private;

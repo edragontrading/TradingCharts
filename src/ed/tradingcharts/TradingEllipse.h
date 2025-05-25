@@ -1,5 +1,5 @@
-#ifndef ED_TRADINGCHARTS_RESIZE_HANDLE_H
-#define ED_TRADINGCHARTS_RESIZE_HANDLE_H
+#ifndef ED_TRADINGCHARTS_ELLIPSE_H
+#define ED_TRADINGCHARTS_ELLIPSE_H
 
 /*******************************************************************************
 ** Qt Trading Charts System
@@ -32,48 +32,53 @@ namespace ed {
 
 class ETradingPlot;
 
-class ED_EXPORT EResizeHandle : public QCPItemEllipse {
+class ED_EXPORT ETradingEllipse : public QCPItemEllipse, public ETradingPlotable {
     Q_OBJECT
+    Q_INTERFACES(ed::ETradingPlotable)
 
 public:
-    enum Mode {
-        mResizing,
-        mDrawing,
-    };
+    explicit ETradingEllipse(ETradingPlot *parent);
 
-public:
-    explicit EResizeHandle(ETradingPlot *parent, int halfSize = 5);
+    ~ETradingEllipse();
 
-    ~EResizeHandle();
-
-    void setActive(bool active);
-    void startMoving(Mode mode, const QPointF &mousePos, bool shiftIsPressed);
+    void init() override;
+    void setVisible(bool visible) override;
+    void setChoosen(bool on) override;
+    void setActive(bool active) override;
+    void startMoving(const QPointF &mousePos, bool shiftIsPressed) override;
+    bool isResizeable(const QPointF &mousePos) override;
+    void startResizing(const QPointF &mousePos, bool shiftIsPressed) override;
+    void startDrawing(const QPointF &mousePos) override;
 
     QPointF pos() const;
     const QColor &color() const;
     void setColor(const QColor &color);
 
 Q_SIGNALS:
-    void startingMoving();
+    void activated();     ///< emitted on mouse over
+    void disactivated();  ///< emitted when cursor leave us
+
     void moved(const QPointF &pos);
     void completedMoving();
-    void cancelledMoving();
 
 public Q_SLOTS:
-    void setVisible(bool on);
-    void moveCoord(double x, double y);
+    void moveCoord(double x1, double y1, double x2, double y2);
 
 private Q_SLOTS:
     void onMouseMove(QMouseEvent *event);
-    void mouseRelease(QMouseEvent *event);
-    void mousePress(QMouseEvent *event);
-    void onShiftStateChanged(bool shiftPressed);
-    void stopMoving();
-    void onCancelled();
+    void onCompletedMoving();
     void moveToWantedPos();
+    void topLeftMoving(const QPointF &pos);
+    void bottomRightMoving(const QPointF &pos);
 
 private:
-    void movePixel(double x, double y);
+    void createTopLeftResize();
+    void createBottomRightResize();
+    void resizeTopLeftStoppedMoving();
+    void resizeBottomRightStoppedMoving();
+    bool isTopLeftResize(const QPointF &mousePos);
+    bool isBottomRightResize(const QPointF &mousePos);
+    double selectTest(const QPointF &pos, bool onlySelectable, QVariant *details = nullptr) const override;
 
 private:
     struct Private;
@@ -81,4 +86,4 @@ private:
 };
 }  // namespace ed
 
-#endif  // ED_TRADINGCHARTS_RESIZE_HANDLE_H
+#endif  // ED_TRADINGCHARTS_ELLIPSE_H

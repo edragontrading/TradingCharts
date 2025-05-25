@@ -22,14 +22,14 @@
 //============================================================================
 
 #include <ed/tradingcharts/ResizeHandle.h>
+#include <ed/tradingcharts/TradingEllipse.h>
 #include <ed/tradingcharts/TradingPlot.h>
-#include <ed/tradingcharts/TradingRect.h>
 
 #include <QPointF>
 
 namespace ed {
 
-struct ETradingRect::Private {
+struct ETradingEllipse::Private {
     Private() = default;
 
     bool mIsDrawing;
@@ -46,7 +46,7 @@ struct ETradingRect::Private {
     ETradingPlot *mParent;
 };
 
-ETradingRect::ETradingRect(ETradingPlot *parent) : QCPItemRect(parent), d(new Private) {
+ETradingEllipse::ETradingEllipse(ETradingPlot *parent) : QCPItemEllipse(parent), d(new Private) {
     d->mParent = parent;
     d->mIsDrawing = false;
     d->mMoveTimer = new QTimer();
@@ -72,7 +72,7 @@ ETradingRect::ETradingRect(ETradingPlot *parent) : QCPItemRect(parent), d(new Pr
     connect(d->mMoveTimer, SIGNAL(timeout()), this, SLOT(moveToWantedPos()));
 }
 
-ETradingRect::~ETradingRect() {
+ETradingEllipse::~ETradingEllipse() {
     d->mMoveTimer->stop();
     delete d->mMoveTimer;
 
@@ -86,12 +86,12 @@ ETradingRect::~ETradingRect() {
     delete d;
 }
 
-void ETradingRect::init() {
+void ETradingEllipse::init() {
     createTopLeftResize();
     createBottomRightResize();
 }
 
-void ETradingRect::setChoosen(bool on) {
+void ETradingEllipse::setChoosen(bool on) {
     setSelected(on);
 
     d->mResizeTopLeft->setSelected(on);
@@ -103,11 +103,11 @@ void ETradingRect::setChoosen(bool on) {
     }
 }
 
-void ETradingRect::setVisible(bool on) {
-    QCPItemRect::setVisible(on);
+void ETradingEllipse::setVisible(bool on) {
+    QCPItemEllipse::setVisible(on);
 }
 
-void ETradingRect::setActive(bool isActive) {
+void ETradingEllipse::setActive(bool isActive) {
     setSelected(isActive);
     d->mResizeTopLeft->setVisible(isActive);
     d->mResizeBottomRight->setVisible(isActive);
@@ -115,7 +115,7 @@ void ETradingRect::setActive(bool isActive) {
     Q_EMIT(isActive ? activated() : disactivated());
 }
 
-void ETradingRect::startMoving(const QPointF &mousePos, bool shiftIsPressed) {
+void ETradingEllipse::startMoving(const QPointF &mousePos, bool shiftIsPressed) {
     d->mIsDrawing = false;
     d->mDragStart = mousePos;
     d->mStartTopLeft = this->topLeft->coords();
@@ -130,7 +130,7 @@ void ETradingRect::startMoving(const QPointF &mousePos, bool shiftIsPressed) {
     d->mUserLayer->replot();
 }
 
-bool ETradingRect::isResizeable(const QPointF &mousePos) {
+bool ETradingEllipse::isResizeable(const QPointF &mousePos) {
     if (isTopLeftResize(mousePos)) {
         return true;
     }
@@ -142,7 +142,7 @@ bool ETradingRect::isResizeable(const QPointF &mousePos) {
     return false;
 }
 
-void ETradingRect::startResizing(const QPointF &mousePos, bool shiftIsPressed) {
+void ETradingEllipse::startResizing(const QPointF &mousePos, bool shiftIsPressed) {
     d->mIsDrawing = false;
     if (isTopLeftResize(mousePos)) {
         d->mResizeTopLeft->setActive(true);
@@ -155,7 +155,7 @@ void ETradingRect::startResizing(const QPointF &mousePos, bool shiftIsPressed) {
     }
 }
 
-void ETradingRect::startDrawing(const QPointF &mousePos) {
+void ETradingEllipse::startDrawing(const QPointF &mousePos) {
     d->mIsDrawing = true;
     QPointF pos = d->mParent->pixelsToCoords(mousePos.x(), mousePos.y());
 
@@ -163,16 +163,16 @@ void ETradingRect::startDrawing(const QPointF &mousePos) {
     d->mResizeBottomRight->startMoving(EResizeHandle::Mode::mDrawing, mousePos, false);
 }
 
-const QColor &ETradingRect::color() const {
+const QColor &ETradingEllipse::color() const {
     return brush().color();
 }
 
-void ETradingRect::setColor(const QColor &color) {
+void ETradingEllipse::setColor(const QColor &color) {
     setBrush(color);
     setSelectedBrush(color);
 }
 
-void ETradingRect::onCompletedMoving() {
+void ETradingEllipse::onCompletedMoving() {
     disconnect(parentPlot(), SIGNAL(mouseMove(QMouseEvent *)), this, SLOT(onMouseMove(QMouseEvent *)));
     disconnect(parentPlot(), SIGNAL(mouseRelease(QMouseEvent *)), this, SLOT(onCompletedMoving()));
 
@@ -187,7 +187,7 @@ void ETradingRect::onCompletedMoving() {
     Q_EMIT completedMoving();
 }
 
-void ETradingRect::moveCoord(double x1, double y1, double x2, double y2) {
+void ETradingEllipse::moveCoord(double x1, double y1, double x2, double y2) {
     // X axis is integer
     x1 = std::round(x1);
     x2 = std::round(x2);
@@ -202,13 +202,13 @@ void ETradingRect::moveCoord(double x1, double y1, double x2, double y2) {
     d->mUserLayer->replot();
 }
 
-void ETradingRect::onMouseMove(QMouseEvent *event) {
+void ETradingEllipse::onMouseMove(QMouseEvent *event) {
     QPointF p1 = d->mParent->pixelsToCoords(event->pos().x(), event->pos().y());
     QPointF p2 = d->mParent->pixelsToCoords(d->mDragStart.x(), d->mDragStart.y());
     d->mCurWantedPosPx = p1 - p2;
 }
 
-void ETradingRect::moveToWantedPos() {
+void ETradingEllipse::moveToWantedPos() {
     if (d->mCurWantedPosPx.isNull()) {
         return;
     }
@@ -223,15 +223,15 @@ void ETradingRect::moveToWantedPos() {
     d->mCurWantedPosPx = QPointF();
 }
 
-void ETradingRect::topLeftMoving(const QPointF &pos) {
+void ETradingEllipse::topLeftMoving(const QPointF &pos) {
     this->topLeft->setCoords(pos);
 }
 
-void ETradingRect::bottomRightMoving(const QPointF &pos) {
+void ETradingEllipse::bottomRightMoving(const QPointF &pos) {
     this->bottomRight->setCoords(pos);
 }
 
-void ETradingRect::createTopLeftResize() {
+void ETradingEllipse::createTopLeftResize() {
     if (d->mResizeTopLeft != nullptr) {
         return;
     }
@@ -257,7 +257,7 @@ void ETradingRect::createTopLeftResize() {
     });
 }
 
-void ETradingRect::createBottomRightResize() {
+void ETradingEllipse::createBottomRightResize() {
     if (d->mResizeBottomRight != nullptr) {
         return;
     }
@@ -283,29 +283,42 @@ void ETradingRect::createBottomRightResize() {
     });
 }
 
-void ETradingRect::resizeTopLeftStoppedMoving() {
+void ETradingEllipse::resizeTopLeftStoppedMoving() {
     this->d->mResizeTopLeft->setActive(!d->mIsDrawing);
     this->d->mResizeBottomRight->setActive(!d->mIsDrawing);
     disconnect(d->mResizeTopLeft, SIGNAL(moved(const QPointF &)), this, SLOT(topLeftMoving(const QPointF &)));
 }
 
-void ETradingRect::resizeBottomRightStoppedMoving() {
+void ETradingEllipse::resizeBottomRightStoppedMoving() {
     this->d->mResizeTopLeft->setActive(!d->mIsDrawing);
     this->d->mResizeBottomRight->setActive(!d->mIsDrawing);
     disconnect(d->mResizeBottomRight, SIGNAL(moved(const QPointF &)), this, SLOT(bottomRightMoving(const QPointF &)));
 }
 
-bool ETradingRect::isTopLeftResize(const QPointF &mousePos) {
+bool ETradingEllipse::isTopLeftResize(const QPointF &mousePos) {
     QPointF pTopLeft = d->mParent->coordsToPixels(topLeft->key(), topLeft->value());
     double distance = ed::interal::distance(pTopLeft, mousePos);
 
     return (distance < 10.0);
 }
 
-bool ETradingRect::isBottomRightResize(const QPointF &mousePos) {
+bool ETradingEllipse::isBottomRightResize(const QPointF &mousePos) {
     QPointF pBottomRight = d->mParent->coordsToPixels(bottomRight->key(), bottomRight->value());
     double distance = ed::interal::distance(pBottomRight, mousePos);
 
     return (distance < 10.0);
+}
+
+double ETradingEllipse::selectTest(const QPointF &pos, bool onlySelectable, QVariant *details) const {
+    if (onlySelectable && !mSelectable) return -1;
+
+    QPointF pTopLeft = d->mParent->coordsToPixels(topLeft->key(), topLeft->value());
+    QPointF pBottomRight = d->mParent->coordsToPixels(bottomRight->key(), bottomRight->value());
+
+    double result = QCPItemEllipse::selectTest(pos, onlySelectable, details);
+    result = std::min(result, ed::interal::distance(pTopLeft, pos));
+    result = std::min(result, ed::interal::distance(pBottomRight, pos));
+
+    return result;
 }
 }  // namespace ed

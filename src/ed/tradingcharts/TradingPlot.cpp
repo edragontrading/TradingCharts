@@ -21,6 +21,7 @@
 /// \date   21.05.2025
 //============================================================================
 
+#include <ed/tradingcharts/TradingEllipse.h>
 #include <ed/tradingcharts/TradingPlot.h>
 #include <ed/tradingcharts/TradingPlotable.h>
 #include <ed/tradingcharts/TradingRect.h>
@@ -113,6 +114,14 @@ void ETradingPlot::setMode(Mode mode) {
     }
 }
 
+QPointF ETradingPlot::coordsToPixels(double x, double y) {
+    return QPointF(xAxis->coordToPixel(x), yAxis->coordToPixel(y));
+}
+
+QPointF ETradingPlot::pixelsToCoords(double x, double y) {
+    return QPointF(xAxis->pixelToCoord(x), yAxis->pixelToCoord(y));
+}
+
 void ETradingPlot::mousePressEvent(QMouseEvent *event) {
     if (event->button() != Qt::LeftButton) {
         QCustomPlot::mousePressEvent(event);
@@ -129,11 +138,10 @@ void ETradingPlot::mousePressEvent(QMouseEvent *event) {
             d->mPointSelected->setChoosen(false);
         }
 
-        ETradingRect *rect = new ETradingRect(this);
-        rect->init();
-        rect->startDrawing(event->position());
-        d->mPointDrawing = qobject_cast<QCPAbstractItem *>(rect);
-        connect(d->mPointDrawing, SIGNAL(drawingCompleted(bool)), this, SLOT(onDrawingCompleted(bool)));
+        d->mPointDrawing = createDrawingItem(event);
+        if (d->mPointDrawing != nullptr) {
+            connect(d->mPointDrawing, SIGNAL(drawingCompleted(bool)), this, SLOT(onDrawingCompleted(bool)));
+        }
         return;
     }
 
@@ -262,6 +270,29 @@ void ETradingPlot::handleMouseWheel(QWheelEvent *event) {
     } else {
         this->axisRect()->setRangeZoom(Qt::Horizontal | Qt::Vertical);
     }
+}
+
+QCPAbstractItem *ETradingPlot::createDrawingItem(QMouseEvent *event) {
+    switch (d->mPlotMode) {
+        case Mode::pmDrawingRect: {
+            ETradingRect *rect = new ETradingRect(this);
+            rect->init();
+            rect->startDrawing(event->position());
+            return qobject_cast<QCPAbstractItem *>(rect);
+        }
+
+        case Mode::pmDrawingEllipse: {
+            ETradingEllipse *ellipse = new ETradingEllipse(this);
+            ellipse->init();
+            ellipse->startDrawing(event->position());
+            return qobject_cast<QCPAbstractItem *>(ellipse);
+        }
+
+        default:
+            break;
+    }
+
+    return nullptr;
 }
 
 }  // namespace ed
