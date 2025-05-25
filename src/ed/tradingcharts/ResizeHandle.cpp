@@ -44,9 +44,11 @@ struct EResizeHandle::Private {
 
     Mode mMode;
     QCPLayer *mUserLayer;
+    ETradingPlot *mParent;
 };
 
 EResizeHandle::EResizeHandle(ETradingPlot *parent, int halfSize) : QCPItemEllipse(parent), d(new Private) {
+    d->mParent = parent;
     d->mGripDelta = QPointF();
     d->mInitialPos = QPointF();
     d->mLastWantedPos = QPointF();
@@ -60,12 +62,12 @@ EResizeHandle::EResizeHandle(ETradingPlot *parent, int halfSize) : QCPItemEllips
     d->mUserLayer = parent->userLayer();
     d->mMode = Mode::mResizing;
 
-    d->mHelperVertical = new QCPItemStraightLine(parentPlot());
+    d->mHelperVertical = new QCPItemStraightLine(d->mParent);
     d->mHelperVertical->setAntialiased(false);
     d->mHelperVertical->setLayer(d->mUserLayer);
     d->mHelperVertical->setSelectable(false);
 
-    d->mHelperHorizontal = new QCPItemStraightLine(parentPlot());
+    d->mHelperHorizontal = new QCPItemStraightLine(d->mParent);
     d->mHelperHorizontal->setAntialiased(false);
     d->mHelperHorizontal->setLayer(d->mUserLayer);
     d->mHelperHorizontal->setSelectable(false);
@@ -116,8 +118,8 @@ void EResizeHandle::setActive(bool isActive) {
 
 void EResizeHandle::startMoving(Mode mode, const QPointF &mousePos, bool shiftIsPressed) {
     d->mMode = mode;
-    d->mGripDelta.setX(parentPlot()->xAxis->coordToPixel(d->mCenterTracer->position->key()) - mousePos.x());
-    d->mGripDelta.setY(parentPlot()->yAxis->coordToPixel(d->mCenterTracer->position->value()) - mousePos.y());
+    d->mGripDelta =
+        d->mParent->coordsToPixels(d->mCenterTracer->position->key(), d->mCenterTracer->position->value()) - mousePos;
 
     d->mInitialPos = pos();
     d->mLastWantedPos = d->mInitialPos;
@@ -192,11 +194,9 @@ void EResizeHandle::moveCoord(double x, double y) {
     d->mLastWantedPos.setX(x);
     d->mLastWantedPos.setY(y);
     if (d->mIsChangingOnlyOneCoordinate) {
-        double x1 = parentPlot()->xAxis->coordToPixel(x);
-        double x2 = parentPlot()->xAxis->coordToPixel(d->mInitialPos.x());
-        double y1 = parentPlot()->yAxis->coordToPixel(y);
-        double y2 = parentPlot()->yAxis->coordToPixel(d->mInitialPos.y());
-        if (qAbs(x1 - x2) < qAbs(y1 - y2)) {
+        QPointF p1 = d->mParent->coordsToPixels(x, y);
+        QPointF p2 = d->mParent->coordsToPixels(d->mInitialPos.x(), d->mInitialPos.y());
+        if (qAbs(p1.x() - p2.x()) < qAbs(p1.y() - p2.y())) {
             x = d->mInitialPos.x();
         } else {
             y = d->mInitialPos.y();
@@ -212,7 +212,8 @@ void EResizeHandle::moveCoord(double x, double y) {
 }
 
 void EResizeHandle::movePixel(double x, double y) {
-    moveCoord(parentPlot()->xAxis->pixelToCoord(x), parentPlot()->yAxis->pixelToCoord(y));
+    QPointF pos = d->mParent->pixelsToCoords(x, y);
+    moveCoord(pos.x(), pos.y());
 }
 
 void EResizeHandle::onMouseMove(QMouseEvent *event) {
