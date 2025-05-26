@@ -39,7 +39,7 @@ class ED_EXPORT ETradingEllipse : public QCPItemEllipse, public ETradingPlotable
 public:
     explicit ETradingEllipse(ETradingPlot *parent);
 
-    ~ETradingEllipse();
+    ~ETradingEllipse() override;
 
     void init() override;
     void setVisible(bool visible) override;
@@ -50,14 +50,10 @@ public:
     void startResizing(const QPointF &mousePos, bool shiftIsPressed) override;
     void startDrawing(const QPointF &mousePos) override;
 
-    QPointF pos() const;
     const QColor &color() const;
     void setColor(const QColor &color);
 
 Q_SIGNALS:
-    void activated();     ///< emitted on mouse over
-    void disactivated();  ///< emitted when cursor leave us
-
     void moved(const QPointF &pos);
     void completedMoving();
 
@@ -76,8 +72,9 @@ private:
     void createBottomRightResize();
     void resizeTopLeftStoppedMoving();
     void resizeBottomRightStoppedMoving();
-    bool isTopLeftResize(const QPointF &mousePos);
-    bool isBottomRightResize(const QPointF &mousePos);
+    bool isPointResize(const QCPItemPosition *pos, const QPointF &mousePos);
+    void setResizeActive(bool active);
+    void setResizeVisible(bool visible);
     double selectTest(const QPointF &pos, bool onlySelectable, QVariant *details = nullptr) const override;
 
 private:

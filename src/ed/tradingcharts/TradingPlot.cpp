@@ -25,6 +25,7 @@
 #include <ed/tradingcharts/TradingPlot.h>
 #include <ed/tradingcharts/TradingPlotable.h>
 #include <ed/tradingcharts/TradingRect.h>
+#include <ed/tradingcharts/TradingTriangle.h>
 
 namespace ed {
 
@@ -286,6 +287,13 @@ QCPAbstractItem *ETradingPlot::createDrawingItem(QMouseEvent *event) {
             ellipse->init();
             ellipse->startDrawing(event->position());
             return qobject_cast<QCPAbstractItem *>(ellipse);
+        }
+
+        case Mode::pmDrawingTriangle: {
+            ETradingTriangle *triangle = new ETradingTriangle(this);
+            triangle->init();
+            triangle->startDrawing(event->position());
+            return qobject_cast<QCPAbstractItem *>(triangle);
         }
 
         default:

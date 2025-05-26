@@ -76,12 +76,12 @@ ETradingRect::~ETradingRect() {
     d->mMoveTimer->stop();
     delete d->mMoveTimer;
 
-    if (parentPlot()->hasItem(d->mResizeTopLeft)) {
-        parentPlot()->removeItem(d->mResizeTopLeft);
+    if (d->mParent->hasItem(d->mResizeTopLeft)) {
+        d->mParent->removeItem(d->mResizeTopLeft);
     }
 
-    if (parentPlot()->hasItem(d->mResizeBottomRight)) {
-        parentPlot()->removeItem(d->mResizeBottomRight);
+    if (d->mParent->hasItem(d->mResizeBottomRight)) {
+        d->mParent->removeItem(d->mResizeBottomRight);
     }
     delete d;
 }
@@ -93,13 +93,10 @@ void ETradingRect::init() {
 
 void ETradingRect::setChoosen(bool on) {
     setSelected(on);
-
-    d->mResizeTopLeft->setSelected(on);
-    d->mResizeBottomRight->setSelected(on);
+    setResizeActive(on);
 
     if (!on) {
-        d->mResizeTopLeft->setVisible(on);
-        d->mResizeBottomRight->setVisible(on);
+        setResizeVisible(on);
     }
 }
 
@@ -109,10 +106,7 @@ void ETradingRect::setVisible(bool on) {
 
 void ETradingRect::setActive(bool isActive) {
     setSelected(isActive);
-    d->mResizeTopLeft->setVisible(isActive);
-    d->mResizeBottomRight->setVisible(isActive);
-
-    Q_EMIT(isActive ? activated() : disactivated());
+    setResizeVisible(isActive);
 }
 
 void ETradingRect::startMoving(const QPointF &mousePos, bool shiftIsPressed) {
@@ -122,20 +116,20 @@ void ETradingRect::startMoving(const QPointF &mousePos, bool shiftIsPressed) {
     d->mStartBottomRight = this->bottomRight->coords();
     d->mMoveTimer->start();
 
-    connect(parentPlot(), SIGNAL(mouseMove(QMouseEvent *)), this, SLOT(onMouseMove(QMouseEvent *)));
-    connect(parentPlot(), SIGNAL(mouseRelease(QMouseEvent *)), this, SLOT(onCompletedMoving()));
+    connect(d->mParent, SIGNAL(mouseMove(QMouseEvent *)), this, SLOT(onMouseMove(QMouseEvent *)));
+    connect(d->mParent, SIGNAL(mouseRelease(QMouseEvent *)), this, SLOT(onCompletedMoving()));
 
-    parentPlot()->grabKeyboard();
+    d->mParent->grabKeyboard();
     QApplication::setOverrideCursor(Qt::ClosedHandCursor);
     d->mUserLayer->replot();
 }
 
 bool ETradingRect::isResizeable(const QPointF &mousePos) {
-    if (isTopLeftResize(mousePos)) {
+    if (isPointResize(this->topLeft, mousePos)) {
         return true;
     }
 
-    if (isBottomRightResize(mousePos)) {
+    if (isPointResize(this->bottomRight, mousePos)) {
         return true;
     }
 
@@ -144,12 +138,12 @@ bool ETradingRect::isResizeable(const QPointF &mousePos) {
 
 void ETradingRect::startResizing(const QPointF &mousePos, bool shiftIsPressed) {
     d->mIsDrawing = false;
-    if (isTopLeftResize(mousePos)) {
+    if (isPointResize(this->topLeft, mousePos)) {
+        setResizeActive(false);
         d->mResizeTopLeft->setActive(true);
-        d->mResizeBottomRight->setActive(false);
         d->mResizeTopLeft->startMoving(EResizeHandle::Mode::mResizing, mousePos, shiftIsPressed);
     } else {
-        d->mResizeTopLeft->setActive(false);
+        setResizeActive(false);
         d->mResizeBottomRight->setActive(true);
         d->mResizeBottomRight->startMoving(EResizeHandle::Mode::mResizing, mousePos, shiftIsPressed);
     }
@@ -173,15 +167,15 @@ void ETradingRect::setColor(const QColor &color) {
 }
 
 void ETradingRect::onCompletedMoving() {
-    disconnect(parentPlot(), SIGNAL(mouseMove(QMouseEvent *)), this, SLOT(onMouseMove(QMouseEvent *)));
-    disconnect(parentPlot(), SIGNAL(mouseRelease(QMouseEvent *)), this, SLOT(onCompletedMoving()));
+    disconnect(d->mParent, SIGNAL(mouseMove(QMouseEvent *)), this, SLOT(onMouseMove(QMouseEvent *)));
+    disconnect(d->mParent, SIGNAL(mouseRelease(QMouseEvent *)), this, SLOT(onCompletedMoving()));
 
     d->mMoveTimer->stop();
     moveToWantedPos();
 
     d->mUserLayer->replot();
 
-    parentPlot()->releaseKeyboard();
+    d->mParent->releaseKeyboard();
     QApplication::restoreOverrideCursor();
 
     Q_EMIT completedMoving();
@@ -284,28 +278,29 @@ void ETradingRect::createBottomRightResize() {
 }
 
 void ETradingRect::resizeTopLeftStoppedMoving() {
-    this->d->mResizeTopLeft->setActive(!d->mIsDrawing);
-    this->d->mResizeBottomRight->setActive(!d->mIsDrawing);
+    setResizeActive(!d->mIsDrawing);
     disconnect(d->mResizeTopLeft, SIGNAL(moved(const QPointF &)), this, SLOT(topLeftMoving(const QPointF &)));
 }
 
 void ETradingRect::resizeBottomRightStoppedMoving() {
-    this->d->mResizeTopLeft->setActive(!d->mIsDrawing);
-    this->d->mResizeBottomRight->setActive(!d->mIsDrawing);
+    setResizeActive(!d->mIsDrawing);
     disconnect(d->mResizeBottomRight, SIGNAL(moved(const QPointF &)), this, SLOT(bottomRightMoving(const QPointF &)));
 }
 
-bool ETradingRect::isTopLeftResize(const QPointF &mousePos) {
-    QPointF pTopLeft = d->mParent->coordsToPixels(topLeft->key(), topLeft->value());
-    double distance = ed::interal::distance(pTopLeft, mousePos);
+bool ETradingRect::isPointResize(const QCPItemPosition *pos, const QPointF &mousePos) {
+    QPointF point = d->mParent->coordsToPixels(pos->key(), pos->value());
+    double distance = ed::interal::distance(point, mousePos);
 
     return (distance < 10.0);
 }
 
-bool ETradingRect::isBottomRightResize(const QPointF &mousePos) {
-    QPointF pBottomRight = d->mParent->coordsToPixels(bottomRight->key(), bottomRight->value());
-    double distance = ed::interal::distance(pBottomRight, mousePos);
+void ETradingRect::setResizeActive(bool active) {
+    this->d->mResizeTopLeft->setActive(active);
+    this->d->mResizeBottomRight->setActive(active);
+}
 
-    return (distance < 10.0);
+void ETradingRect::setResizeVisible(bool visible) {
+    this->d->mResizeTopLeft->setVisible(visible);
+    this->d->mResizeBottomRight->setVisible(visible);
 }
 }  // namespace ed

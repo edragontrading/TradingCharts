@@ -37,6 +37,7 @@ public:
         pmNone,
         pmDrawingRect,
         pmDrawingEllipse,
+        pmDrawingTriangle,
     };
 
 public:

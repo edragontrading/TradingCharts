@@ -1,5 +1,5 @@
-#ifndef ED_TRADINGCHARTS_RECT_H
-#define ED_TRADINGCHARTS_RECT_H
+#ifndef ED_TRADINGCHARTS_TRIANGLE_H
+#define ED_TRADINGCHARTS_TRIANGLE_H
 
 /*******************************************************************************
 ** Qt Trading Charts System
@@ -32,14 +32,14 @@ namespace ed {
 
 class ETradingPlot;
 
-class ED_EXPORT ETradingRect : public QCPItemRect, public ETradingPlotable {
+class ED_EXPORT ETradingTriangle : public QCPItemTriangle, public ETradingPlotable {
     Q_OBJECT
     Q_INTERFACES(ed::ETradingPlotable)
 
 public:
-    explicit ETradingRect(ETradingPlot *parent);
+    explicit ETradingTriangle(ETradingPlot *parent);
 
-    ~ETradingRect() override;
+    ~ETradingTriangle() override;
 
     void init() override;
     void setVisible(bool visible) override;
@@ -50,6 +50,7 @@ public:
     void startResizing(const QPointF &mousePos, bool shiftIsPressed) override;
     void startDrawing(const QPointF &mousePos) override;
 
+    QPointF pos() const;
     const QColor &color() const;
     void setColor(const QColor &color);
 
@@ -58,20 +59,23 @@ Q_SIGNALS:
     void completedMoving();
 
 public Q_SLOTS:
-    void moveCoord(double x1, double y1, double x2, double y2);
+    void moveCoord(double x1, double y1, double x2, double y2, double x3, double y3);
 
 private Q_SLOTS:
     void onMouseMove(QMouseEvent *event);
     void onCompletedMoving();
     void moveToWantedPos();
-    void topLeftMoving(const QPointF &pos);
-    void bottomRightMoving(const QPointF &pos);
+    void point1Moving(const QPointF &pos);
+    void point2Moving(const QPointF &pos);
+    void point3Moving(const QPointF &pos);
 
 private:
-    void createTopLeftResize();
-    void createBottomRightResize();
-    void resizeTopLeftStoppedMoving();
-    void resizeBottomRightStoppedMoving();
+    void createPoint1Resize();
+    void createPoint2Resize();
+    void createPoint3Resize();
+    void resizePoint1StoppedMoving();
+    void resizePoint2StoppedMoving();
+    void resizePoint3StoppedMoving();
     bool isPointResize(const QCPItemPosition *pos, const QPointF &mousePos);
     void setResizeActive(bool active);
     void setResizeVisible(bool visible);
@@ -82,4 +86,4 @@ private:
 };
 }  // namespace ed
 
-#endif  // ED_TRADINGCHARTS_RECT_H
+#endif  // ED_TRADINGCHARTS_TRIANGLE_H

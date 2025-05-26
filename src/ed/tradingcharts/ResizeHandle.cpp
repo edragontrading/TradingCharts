@@ -101,12 +101,12 @@ EResizeHandle::~EResizeHandle() {
     d->mMoveTimer->stop();
     delete d->mMoveTimer;
 
-    if (parentPlot()->hasItem(d->mHelperVertical)) {
-        parentPlot()->removeItem(d->mHelperVertical);
+    if (d->mParent->hasItem(d->mHelperVertical)) {
+        d->mParent->removeItem(d->mHelperVertical);
     }
 
-    if (parentPlot()->hasItem(d->mHelperHorizontal)) {
-        parentPlot()->removeItem(d->mHelperHorizontal);
+    if (d->mParent->hasItem(d->mHelperHorizontal)) {
+        d->mParent->removeItem(d->mHelperHorizontal);
     }
 
     delete d;
@@ -137,16 +137,16 @@ void EResizeHandle::startMoving(Mode mode, const QPointF &mousePos, bool shiftIs
     d->mHelperVertical->setVisible(shiftIsPressed);
     d->mHelperHorizontal->setVisible(shiftIsPressed);
 
-    connect(parentPlot(), SIGNAL(mouseMove(QMouseEvent *)), this, SLOT(onMouseMove(QMouseEvent *)));
-    connect(parentPlot(), SIGNAL(mouseRelease(QMouseEvent *)), this, SLOT(mouseRelease(QMouseEvent *)));
-    connect(parentPlot(), SIGNAL(mousePress(QMouseEvent *)), this, SLOT(mousePress(QMouseEvent *)));
-    connect(parentPlot(), SIGNAL(escapeKeyCancelled()), this, SLOT(onCancelled()));
+    connect(d->mParent, SIGNAL(mouseMove(QMouseEvent *)), this, SLOT(onMouseMove(QMouseEvent *)));
+    connect(d->mParent, SIGNAL(mouseRelease(QMouseEvent *)), this, SLOT(mouseRelease(QMouseEvent *)));
+    connect(d->mParent, SIGNAL(mousePress(QMouseEvent *)), this, SLOT(mousePress(QMouseEvent *)));
+    connect(d->mParent, SIGNAL(escapeKeyCancelled()), this, SLOT(onCancelled()));
 
     if (d->mMode == mResizing) {
-        connect(parentPlot(), SIGNAL(shiftStateChanged(bool)), this, SLOT(onShiftStateChanged(bool)));
+        connect(d->mParent, SIGNAL(shiftStateChanged(bool)), this, SLOT(onShiftStateChanged(bool)));
     }
 
-    parentPlot()->grabKeyboard();
+    d->mParent->grabKeyboard();
     QApplication::setOverrideCursor(Qt::ClosedHandCursor);
 
     d->mUserLayer->replot();
@@ -171,13 +171,13 @@ void EResizeHandle::setVisible(bool on) {
 }
 
 void EResizeHandle::stopMoving() {
-    disconnect(parentPlot(), SIGNAL(mouseMove(QMouseEvent *)), this, SLOT(onMouseMove(QMouseEvent *)));
-    disconnect(parentPlot(), SIGNAL(mouseRelease(QMouseEvent *)), this, SLOT(mouseRelease(QMouseEvent *)));
-    disconnect(parentPlot(), SIGNAL(mousePress(QMouseEvent *)), this, SLOT(mousePress(QMouseEvent *)));
-    disconnect(parentPlot(), SIGNAL(escapeKeyCancelled()), this, SLOT(onCancelled()));
+    disconnect(d->mParent, SIGNAL(mouseMove(QMouseEvent *)), this, SLOT(onMouseMove(QMouseEvent *)));
+    disconnect(d->mParent, SIGNAL(mouseRelease(QMouseEvent *)), this, SLOT(mouseRelease(QMouseEvent *)));
+    disconnect(d->mParent, SIGNAL(mousePress(QMouseEvent *)), this, SLOT(mousePress(QMouseEvent *)));
+    disconnect(d->mParent, SIGNAL(escapeKeyCancelled()), this, SLOT(onCancelled()));
 
     if (d->mMode == mResizing) {
-        disconnect(parentPlot(), SIGNAL(shiftStateChanged(bool)), this, SLOT(onShiftStateChanged(bool)));
+        disconnect(d->mParent, SIGNAL(shiftStateChanged(bool)), this, SLOT(onShiftStateChanged(bool)));
     }
 
     d->mMoveTimer->stop();
@@ -185,8 +185,9 @@ void EResizeHandle::stopMoving() {
 
     d->mHelperVertical->setVisible(false);
     d->mHelperHorizontal->setVisible(false);
+    d->mIsChangingOnlyOneCoordinate = false;
 
-    parentPlot()->releaseKeyboard();
+    d->mParent->releaseKeyboard();
     QApplication::restoreOverrideCursor();
 }
 
