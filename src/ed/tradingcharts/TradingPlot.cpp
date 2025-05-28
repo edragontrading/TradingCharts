@@ -21,7 +21,9 @@
 /// \date   21.05.2025
 //============================================================================
 
+#include <ed/tradingcharts/TradingAngle.h>
 #include <ed/tradingcharts/TradingEllipse.h>
+#include <ed/tradingcharts/TradingParallel.h>
 #include <ed/tradingcharts/TradingPlot.h>
 #include <ed/tradingcharts/TradingPlotable.h>
 #include <ed/tradingcharts/TradingRect.h>
@@ -294,6 +296,20 @@ QCPAbstractItem *ETradingPlot::createDrawingItem(QMouseEvent *event) {
             triangle->init();
             triangle->startDrawing(event->position());
             return qobject_cast<QCPAbstractItem *>(triangle);
+        }
+
+        case Mode::pmDrawingAngle: {
+            ETradingAngle *angle = new ETradingAngle(this);
+            angle->init();
+            angle->startDrawing(event->position());
+            return qobject_cast<QCPAbstractItem *>(angle);
+        }
+
+        case Mode::pmDrawingParallel: {
+            ETradingParallel *parallel = new ETradingParallel(this);
+            parallel->init();
+            parallel->startDrawing(event->position());
+            return qobject_cast<QCPAbstractItem *>(parallel);
         }
 
         default:

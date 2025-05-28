@@ -27,6 +27,8 @@ set(TRADING_CHARTS_SRCS
     ed/tradingcharts/TradingRect.cpp
     ed/tradingcharts/TradingEllipse.cpp
     ed/tradingcharts/TradingTriangle.cpp
+    ed/tradingcharts/TradingAngle.cpp
+    ed/tradingcharts/TradingParallel.cpp
 )
 
 set(TRADING_CHARTS_HEADERS
@@ -37,6 +39,8 @@ set(TRADING_CHARTS_HEADERS
     ed/tradingcharts/TradingRect.h
     ed/tradingcharts/TradingEllipse.h
     ed/tradingcharts/TradingTriangle.h
+    ed/tradingcharts/TradingAngle.h
+    ed/tradingcharts/TradingParallel.h
 )
 
 add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")

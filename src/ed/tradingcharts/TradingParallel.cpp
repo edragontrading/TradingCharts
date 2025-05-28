@@ -22,18 +22,20 @@
 //============================================================================
 
 #include <ed/tradingcharts/ResizeHandle.h>
+#include <ed/tradingcharts/TradingParallel.h>
 #include <ed/tradingcharts/TradingPlot.h>
-#include <ed/tradingcharts/TradingTriangle.h>
 
 #include <QPointF>
 
 namespace ed {
 
-struct ETradingTriangle::Private {
+struct ETradingParallel::Private {
     Private() = default;
 
     bool mIsDrawing;
+    bool mPoint2Completed;
 
+    QPointF point4;
     QPointF mDragStart;
     QPointF mStartPoint1;
     QPointF mStartPoint2;
@@ -49,10 +51,12 @@ struct ETradingTriangle::Private {
     ETradingPlot *mParent;
 };
 
-ETradingTriangle::ETradingTriangle(ETradingPlot *parent) : QCPItemTriangle(parent), d(new Private) {
+ETradingParallel::ETradingParallel(ETradingPlot *parent) : QCPItemParallel(parent), d(new Private) {
     d->mParent = parent;
     d->mIsDrawing = false;
+    d->mPoint2Completed = false;
     d->mMoveTimer = new QTimer();
+    d->point4 = QPointF();
     d->mDragStart = QPointF();
     d->mStartPoint1 = QPointF();
     d->mStartPoint2 = QPointF();
@@ -79,7 +83,7 @@ ETradingTriangle::ETradingTriangle(ETradingPlot *parent) : QCPItemTriangle(paren
     connect(d->mMoveTimer, SIGNAL(timeout()), this, SLOT(moveToWantedPos()));
 }
 
-ETradingTriangle::~ETradingTriangle() {
+ETradingParallel::~ETradingParallel() {
     d->mMoveTimer->stop();
     delete d->mMoveTimer;
 
@@ -97,13 +101,15 @@ ETradingTriangle::~ETradingTriangle() {
     delete d;
 }
 
-void ETradingTriangle::init() {
+void ETradingParallel::init() {
     if (d->mResizePoint1 == nullptr) {
         d->mResizePoint1 = createPointResize();
     }
 
     if (d->mResizePoint2 == nullptr) {
         d->mResizePoint2 = createPointResize();
+        connect(d->mResizePoint2, &EResizeHandle::startingMoving, this,
+                [this]() { d->point4 = this->point1->coords() + (this->point3->coords() - this->point2->coords()); });
     }
 
     if (d->mResizePoint3 == nullptr) {
@@ -111,7 +117,7 @@ void ETradingTriangle::init() {
     }
 }
 
-void ETradingTriangle::setChoosen(bool on) {
+void ETradingParallel::setChoosen(bool on) {
     setSelected(on);
     setResizeActive(on);
 
@@ -120,16 +126,16 @@ void ETradingTriangle::setChoosen(bool on) {
     }
 }
 
-void ETradingTriangle::setVisible(bool on) {
-    QCPItemTriangle::setVisible(on);
+void ETradingParallel::setVisible(bool on) {
+    QCPItemParallel::setVisible(on);
 }
 
-void ETradingTriangle::setActive(bool isActive) {
+void ETradingParallel::setActive(bool isActive) {
     setSelected(isActive);
     setResizeVisible(isActive);
 }
 
-void ETradingTriangle::startMoving(const QPointF &mousePos, bool shiftIsPressed) {
+void ETradingParallel::startMoving(const QPointF &mousePos, bool shiftIsPressed) {
     d->mIsDrawing = false;
     d->mDragStart = mousePos;
     d->mStartPoint1 = this->point1->coords();
@@ -145,7 +151,7 @@ void ETradingTriangle::startMoving(const QPointF &mousePos, bool shiftIsPressed)
     d->mUserLayer->replot();
 }
 
-bool ETradingTriangle::isResizeable(const QPointF &mousePos) {
+bool ETradingParallel::isResizeable(const QPointF &mousePos) {
     if (ed::internal::near(this->point1->pixelPosition(), mousePos)) {
         return true;
     }
@@ -161,7 +167,7 @@ bool ETradingTriangle::isResizeable(const QPointF &mousePos) {
     return false;
 }
 
-void ETradingTriangle::startResizing(const QPointF &mousePos, bool shiftIsPressed) {
+void ETradingParallel::startResizing(const QPointF &mousePos, bool shiftIsPressed) {
     d->mIsDrawing = false;
     if (ed::internal::near(this->point1->pixelPosition(), mousePos)) {
         d->mResizeSelect = d->mResizePoint1;
@@ -176,26 +182,27 @@ void ETradingTriangle::startResizing(const QPointF &mousePos, bool shiftIsPresse
     d->mResizeSelect->startMoving(EResizeHandle::Mode::mResizing, mousePos, shiftIsPressed);
 }
 
-void ETradingTriangle::startDrawing(const QPointF &mousePos) {
+void ETradingParallel::startDrawing(const QPointF &mousePos) {
     d->mIsDrawing = true;
+    d->mPoint2Completed = false;
 
     QPointF pos = d->mParent->pixelsToCoords(mousePos.x(), mousePos.y());
     moveCoord(pos.x(), pos.y(), pos.x(), pos.y(), pos.x(), pos.y());
 
-    d->mResizeSelect = d->mResizePoint2;
+    d->mResizeSelect = d->mResizePoint3;
     d->mResizeSelect->startMoving(EResizeHandle::Mode::mDrawing, mousePos, false);
 }
 
-const QColor &ETradingTriangle::color() const {
+const QColor &ETradingParallel::color() const {
     return brush().color();
 }
 
-void ETradingTriangle::setColor(const QColor &color) {
+void ETradingParallel::setColor(const QColor &color) {
     setBrush(color);
     setSelectedBrush(color);
 }
 
-void ETradingTriangle::onCompletedMoving() {
+void ETradingParallel::onCompletedMoving() {
     disconnect(d->mParent, SIGNAL(mouseMove(QMouseEvent *)), this, SLOT(onMouseMove(QMouseEvent *)));
     disconnect(d->mParent, SIGNAL(mouseRelease(QMouseEvent *)), this, SLOT(onCompletedMoving()));
 
@@ -210,7 +217,7 @@ void ETradingTriangle::onCompletedMoving() {
     Q_EMIT completedMoving();
 }
 
-void ETradingTriangle::moveCoord(double x1, double y1, double x2, double y2, double x3, double y3) {
+void ETradingParallel::moveCoord(double x1, double y1, double x2, double y2, double x3, double y3) {
     // X axis is integer
     x1 = std::round(x1);
     x2 = std::round(x2);
@@ -228,13 +235,13 @@ void ETradingTriangle::moveCoord(double x1, double y1, double x2, double y2, dou
     d->mUserLayer->replot();
 }
 
-void ETradingTriangle::onMouseMove(QMouseEvent *event) {
+void ETradingParallel::onMouseMove(QMouseEvent *event) {
     QPointF p1 = d->mParent->pixelsToCoords(event->pos().x(), event->pos().y());
     QPointF p2 = d->mParent->pixelsToCoords(d->mDragStart.x(), d->mDragStart.y());
     d->mCurWantedPosPx = p1 - p2;
 }
 
-void ETradingTriangle::moveToWantedPos() {
+void ETradingParallel::moveToWantedPos() {
     if (d->mCurWantedPosPx.isNull()) {
         return;
     }
@@ -252,21 +259,24 @@ void ETradingTriangle::moveToWantedPos() {
     d->mCurWantedPosPx = QPointF();
 }
 
-void ETradingTriangle::pointMoving(const QPointF &pos) {
+void ETradingParallel::pointMoving(const QPointF &pos) {
     if (d->mResizeSelect == d->mResizePoint1) {
         this->point1->setCoords(pos);
     } else if (d->mResizeSelect == d->mResizePoint2) {
+        QPointF p3 = d->point4 + (pos - this->point1->coords());
         this->point2->setCoords(pos);
-        if (d->mIsDrawing) {
-            this->point3->setCoords(pos);
-            this->d->mResizePoint3->moveCoord(pos.x(), pos.y());
-        }
+        this->point3->setCoords(p3);
+        d->mResizePoint3->moveCoord(p3.x(), p3.y());
     } else if (d->mResizeSelect == d->mResizePoint3) {
         this->point3->setCoords(pos);
+        if (d->mIsDrawing && d->mPoint2Completed == false) {
+            this->point2->setCoords(pos);
+            d->mResizePoint2->moveCoord(pos.x(), pos.y());
+        }
     }
 }
 
-EResizeHandle *ETradingTriangle::createPointResize() {
+EResizeHandle *ETradingParallel::createPointResize() {
     EResizeHandle *resizePoint = new EResizeHandle(d->mParent);
     resizePoint->setVisible(false);
 
@@ -279,32 +289,33 @@ EResizeHandle *ETradingTriangle::createPointResize() {
     return resizePoint;
 }
 
-void ETradingTriangle::resizePointStoppedMoving(bool cancelled) {
+void ETradingParallel::resizePointStoppedMoving(bool cancelled) {
     setResizeActive(!d->mIsDrawing);
     disconnect(d->mResizeSelect, SIGNAL(moved(const QPointF &)), this, SLOT(pointMoving(const QPointF &)));
 
-    if (d->mIsDrawing && cancelled) {
+    if (cancelled && d->mIsDrawing) {
         Q_EMIT drawingCompleted(true);
         return;
     }
 
-    if (d->mIsDrawing && d->mResizeSelect == d->mResizePoint2) {
-        QPointF mousePos = d->mParent->coordsToPixels(this->point2->key(), this->point2->value());
-        d->mResizeSelect = d->mResizePoint3;
-        d->mResizeSelect->startMoving(EResizeHandle::Mode::mDrawing, mousePos, false);
-        return;
+    if (d->mIsDrawing && d->mResizeSelect == d->mResizePoint3) {
+        if (d->mPoint2Completed) {
+            Q_EMIT drawingCompleted(false);
+        } else {
+            d->mPoint2Completed = true;
+            QPointF mousePos = d->mParent->coordsToPixels(this->point2->key(), this->point2->value());
+            d->mResizePoint3->startMoving(EResizeHandle::Mode::mDrawing, mousePos, false);
+        }
     }
-
-    Q_EMIT drawingCompleted(false);
 }
 
-void ETradingTriangle::setResizeActive(bool active) {
+void ETradingParallel::setResizeActive(bool active) {
     this->d->mResizePoint1->setActive(active);
     this->d->mResizePoint2->setActive(active);
     this->d->mResizePoint3->setActive(active);
 }
 
-void ETradingTriangle::setResizeVisible(bool visible) {
+void ETradingParallel::setResizeVisible(bool visible) {
     this->d->mResizePoint1->setVisible(visible);
     this->d->mResizePoint2->setVisible(visible);
     this->d->mResizePoint3->setVisible(visible);

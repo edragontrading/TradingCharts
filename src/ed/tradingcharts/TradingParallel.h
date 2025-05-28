@@ -1,5 +1,5 @@
-#ifndef ED_TRADINGCHARTS_TRIANGLE_H
-#define ED_TRADINGCHARTS_TRIANGLE_H
+#ifndef ED_TRADINGCHARTS_PARALLEL_H
+#define ED_TRADINGCHARTS_PARALLEL_H
 
 /*******************************************************************************
 ** Qt Trading Charts System
@@ -33,14 +33,14 @@ namespace ed {
 class ETradingPlot;
 class EResizeHandle;
 
-class ED_EXPORT ETradingTriangle : public QCPItemTriangle, public ETradingPlotable {
+class ED_EXPORT ETradingParallel : public QCPItemParallel, public ETradingPlotable {
     Q_OBJECT
     Q_INTERFACES(ed::ETradingPlotable)
 
 public:
-    explicit ETradingTriangle(ETradingPlot *parent);
+    explicit ETradingParallel(ETradingPlot *parent);
 
-    ~ETradingTriangle() override;
+    ~ETradingParallel() override;
 
     void init() override;
     void setVisible(bool visible) override;
@@ -80,4 +80,4 @@ private:
 };
 }  // namespace ed
 
-#endif  // ED_TRADINGCHARTS_TRIANGLE_H
+#endif  // ED_TRADINGCHARTS_PARALLEL_H

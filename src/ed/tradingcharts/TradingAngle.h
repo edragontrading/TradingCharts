@@ -1,5 +1,5 @@
-#ifndef ED_TRADINGCHARTS_TRIANGLE_H
-#define ED_TRADINGCHARTS_TRIANGLE_H
+#ifndef ED_TRADINGCHARTS_ANGLE_H
+#define ED_TRADINGCHARTS_ANGLE_H
 
 /*******************************************************************************
 ** Qt Trading Charts System
@@ -33,14 +33,14 @@ namespace ed {
 class ETradingPlot;
 class EResizeHandle;
 
-class ED_EXPORT ETradingTriangle : public QCPItemTriangle, public ETradingPlotable {
+class ED_EXPORT ETradingAngle : public QCPItemAngle, public ETradingPlotable {
     Q_OBJECT
     Q_INTERFACES(ed::ETradingPlotable)
 
 public:
-    explicit ETradingTriangle(ETradingPlot *parent);
+    explicit ETradingAngle(ETradingPlot *parent);
 
-    ~ETradingTriangle() override;
+    ~ETradingAngle() override;
 
     void init() override;
     void setVisible(bool visible) override;
@@ -60,7 +60,7 @@ Q_SIGNALS:
     void completedMoving();
 
 public Q_SLOTS:
-    void moveCoord(double x1, double y1, double x2, double y2, double x3, double y3);
+    void moveCoord(double x1, double y1, double x2, double y2);
 
 private Q_SLOTS:
     void onMouseMove(QMouseEvent *event);
@@ -80,4 +80,4 @@ private:
 };
 }  // namespace ed
 
-#endif  // ED_TRADINGCHARTS_TRIANGLE_H
+#endif  // ED_TRADINGCHARTS_ANGLE_H

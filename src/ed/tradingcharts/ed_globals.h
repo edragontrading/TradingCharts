@@ -55,7 +55,7 @@
 namespace ed {
 Q_NAMESPACE
 
-namespace interal {
+namespace internal {
 
 template <typename TPoint>
 inline double distance(const TPoint& p1, const TPoint& p2) {
@@ -64,7 +64,12 @@ inline double distance(const TPoint& p1, const TPoint& p2) {
     return std::sqrt(dx * dx + dy * dy);
 }
 
-}  // namespace interal
+template <typename TPoint>
+inline bool near(const TPoint& p1, const TPoint& p2) {
+    return (distance(p1, p2) < 10.0);
+}
+
+}  // namespace internal
 
 }  // namespace ed
 

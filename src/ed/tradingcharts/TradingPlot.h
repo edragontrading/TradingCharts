@@ -38,6 +38,8 @@ public:
         pmDrawingRect,
         pmDrawingEllipse,
         pmDrawingTriangle,
+        pmDrawingAngle,
+        pmDrawingParallel,
     };
 
 public:

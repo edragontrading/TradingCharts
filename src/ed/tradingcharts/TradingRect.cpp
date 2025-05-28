@@ -43,6 +43,7 @@ struct ETradingRect::Private {
     QCPLayer *mUserLayer;
     EResizeHandle *mResizeTopLeft;
     EResizeHandle *mResizeBottomRight;
+    EResizeHandle *mResizeSelect;
     ETradingPlot *mParent;
 };
 
@@ -57,6 +58,7 @@ ETradingRect::ETradingRect(ETradingPlot *parent) : QCPItemRect(parent), d(new Pr
     d->mCurWantedPosPx = QPointF();
     d->mResizeTopLeft = nullptr;
     d->mResizeBottomRight = nullptr;
+    d->mResizeSelect = nullptr;
 
     topLeft->setType(QCPItemPosition::ptPlotCoords);
     bottomRight->setType(QCPItemPosition::ptPlotCoords);
@@ -87,8 +89,13 @@ ETradingRect::~ETradingRect() {
 }
 
 void ETradingRect::init() {
-    createTopLeftResize();
-    createBottomRightResize();
+    if (d->mResizeTopLeft == nullptr) {
+        d->mResizeTopLeft = createPointResize();
+    }
+
+    if (d->mResizeBottomRight == nullptr) {
+        d->mResizeBottomRight = createPointResize();
+    }
 }
 
 void ETradingRect::setChoosen(bool on) {
@@ -125,11 +132,11 @@ void ETradingRect::startMoving(const QPointF &mousePos, bool shiftIsPressed) {
 }
 
 bool ETradingRect::isResizeable(const QPointF &mousePos) {
-    if (isPointResize(this->topLeft, mousePos)) {
+    if (ed::internal::near(this->topLeft->pixelPosition(), mousePos)) {
         return true;
     }
 
-    if (isPointResize(this->bottomRight, mousePos)) {
+    if (ed::internal::near(this->bottomRight->pixelPosition(), mousePos)) {
         return true;
     }
 
@@ -138,23 +145,25 @@ bool ETradingRect::isResizeable(const QPointF &mousePos) {
 
 void ETradingRect::startResizing(const QPointF &mousePos, bool shiftIsPressed) {
     d->mIsDrawing = false;
-    if (isPointResize(this->topLeft, mousePos)) {
-        setResizeActive(false);
-        d->mResizeTopLeft->setActive(true);
-        d->mResizeTopLeft->startMoving(EResizeHandle::Mode::mResizing, mousePos, shiftIsPressed);
+    if (ed::internal::near(this->topLeft->pixelPosition(), mousePos)) {
+        d->mResizeSelect = d->mResizeTopLeft;
     } else {
-        setResizeActive(false);
-        d->mResizeBottomRight->setActive(true);
-        d->mResizeBottomRight->startMoving(EResizeHandle::Mode::mResizing, mousePos, shiftIsPressed);
+        d->mResizeSelect = d->mResizeBottomRight;
     }
+
+    setResizeActive(false);
+    d->mResizeSelect->setActive(true);
+    d->mResizeSelect->startMoving(EResizeHandle::Mode::mResizing, mousePos, shiftIsPressed);
 }
 
 void ETradingRect::startDrawing(const QPointF &mousePos) {
     d->mIsDrawing = true;
-    QPointF pos = d->mParent->pixelsToCoords(mousePos.x(), mousePos.y());
 
+    QPointF pos = d->mParent->pixelsToCoords(mousePos.x(), mousePos.y());
     moveCoord(pos.x(), pos.y(), pos.x(), pos.y());
-    d->mResizeBottomRight->startMoving(EResizeHandle::Mode::mDrawing, mousePos, false);
+
+    d->mResizeSelect = d->mResizeBottomRight;
+    d->mResizeSelect->startMoving(EResizeHandle::Mode::mDrawing, mousePos, false);
 }
 
 const QColor &ETradingRect::color() const {
@@ -217,81 +226,34 @@ void ETradingRect::moveToWantedPos() {
     d->mCurWantedPosPx = QPointF();
 }
 
-void ETradingRect::topLeftMoving(const QPointF &pos) {
-    this->topLeft->setCoords(pos);
-}
-
-void ETradingRect::bottomRightMoving(const QPointF &pos) {
-    this->bottomRight->setCoords(pos);
-}
-
-void ETradingRect::createTopLeftResize() {
-    if (d->mResizeTopLeft != nullptr) {
-        return;
+void ETradingRect::pointMoving(const QPointF &pos) {
+    if (d->mResizeSelect == d->mResizeTopLeft) {
+        this->topLeft->setCoords(pos);
+    } else if (d->mResizeSelect == d->mResizeBottomRight) {
+        this->bottomRight->setCoords(pos);
     }
-
-    d->mResizeTopLeft = new EResizeHandle(d->mParent);
-    d->mResizeTopLeft->setVisible(false);
-
-    connect(d->mResizeTopLeft, &EResizeHandle::startingMoving, this, [this]() {
-        connect(d->mResizeTopLeft, SIGNAL(moved(const QPointF &)), this, SLOT(topLeftMoving(const QPointF &)));
-    });
-    connect(d->mResizeTopLeft, &EResizeHandle::completedMoving, this, [this]() {
-        resizeTopLeftStoppedMoving();
-        if (d->mIsDrawing) {
-            Q_EMIT drawingCompleted(true);
-        }
-    });
-
-    connect(d->mResizeTopLeft, &EResizeHandle::cancelledMoving, this, [this]() {
-        resizeTopLeftStoppedMoving();
-        if (d->mIsDrawing) {
-            Q_EMIT drawingCompleted(false);
-        }
-    });
 }
 
-void ETradingRect::createBottomRightResize() {
-    if (d->mResizeBottomRight != nullptr) {
-        return;
+EResizeHandle *ETradingRect::createPointResize() {
+    EResizeHandle *resizePoint = new EResizeHandle(d->mParent);
+    resizePoint->setVisible(false);
+
+    connect(resizePoint, &EResizeHandle::startingMoving, this, [this, resizePoint]() {
+        connect(resizePoint, SIGNAL(moved(const QPointF &)), this, SLOT(pointMoving(const QPointF &)));
+    });
+    connect(resizePoint, &EResizeHandle::completedMoving, this, [this]() { resizePointStoppedMoving(false); });
+    connect(resizePoint, &EResizeHandle::cancelledMoving, this, [this]() { resizePointStoppedMoving(true); });
+
+    return resizePoint;
+}
+
+void ETradingRect::resizePointStoppedMoving(bool cancelled) {
+    setResizeActive(!d->mIsDrawing);
+    disconnect(d->mResizeSelect, SIGNAL(moved(const QPointF &)), this, SLOT(pointMoving(const QPointF &)));
+
+    if (d->mIsDrawing) {
+        Q_EMIT drawingCompleted(cancelled);
     }
-
-    d->mResizeBottomRight = new EResizeHandle(d->mParent);
-    d->mResizeBottomRight->setVisible(false);
-
-    connect(d->mResizeBottomRight, &EResizeHandle::startingMoving, this, [this]() {
-        connect(d->mResizeBottomRight, SIGNAL(moved(const QPointF &)), this, SLOT(bottomRightMoving(const QPointF &)));
-    });
-    connect(d->mResizeBottomRight, &EResizeHandle::completedMoving, this, [this]() {
-        resizeBottomRightStoppedMoving();
-        if (d->mIsDrawing) {
-            Q_EMIT drawingCompleted(false);
-        }
-    });
-
-    connect(d->mResizeBottomRight, &EResizeHandle::cancelledMoving, this, [this]() {
-        resizeBottomRightStoppedMoving();
-        if (d->mIsDrawing) {
-            Q_EMIT drawingCompleted(true);
-        }
-    });
-}
-
-void ETradingRect::resizeTopLeftStoppedMoving() {
-    setResizeActive(!d->mIsDrawing);
-    disconnect(d->mResizeTopLeft, SIGNAL(moved(const QPointF &)), this, SLOT(topLeftMoving(const QPointF &)));
-}
-
-void ETradingRect::resizeBottomRightStoppedMoving() {
-    setResizeActive(!d->mIsDrawing);
-    disconnect(d->mResizeBottomRight, SIGNAL(moved(const QPointF &)), this, SLOT(bottomRightMoving(const QPointF &)));
-}
-
-bool ETradingRect::isPointResize(const QCPItemPosition *pos, const QPointF &mousePos) {
-    QPointF point = d->mParent->coordsToPixels(pos->key(), pos->value());
-    double distance = ed::interal::distance(point, mousePos);
-
-    return (distance < 10.0);
 }
 
 void ETradingRect::setResizeActive(bool active) {

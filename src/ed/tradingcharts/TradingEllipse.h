@@ -31,6 +31,7 @@
 namespace ed {
 
 class ETradingPlot;
+class EResizeHandle;
 
 class ED_EXPORT ETradingEllipse : public QCPItemEllipse, public ETradingPlotable {
     Q_OBJECT
@@ -64,15 +65,11 @@ private Q_SLOTS:
     void onMouseMove(QMouseEvent *event);
     void onCompletedMoving();
     void moveToWantedPos();
-    void topLeftMoving(const QPointF &pos);
-    void bottomRightMoving(const QPointF &pos);
+    void pointMoving(const QPointF &pos);
 
 private:
-    void createTopLeftResize();
-    void createBottomRightResize();
-    void resizeTopLeftStoppedMoving();
-    void resizeBottomRightStoppedMoving();
-    bool isPointResize(const QCPItemPosition *pos, const QPointF &mousePos);
+    EResizeHandle *createPointResize();
+    void resizePointStoppedMoving(bool cancelled);
     void setResizeActive(bool active);
     void setResizeVisible(bool visible);
     double selectTest(const QPointF &pos, bool onlySelectable, QVariant *details = nullptr) const override;
