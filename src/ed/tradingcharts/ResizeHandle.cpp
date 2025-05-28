@@ -31,7 +31,6 @@ namespace ed {
 struct EResizeHandle::Private {
     Private() = default;
 
-    QCPItemTracer *mCenterTracer;
     QPointF mGripDelta;
     QPointF mInitialPos;
     QPointF mLastWantedPos;
@@ -47,7 +46,7 @@ struct EResizeHandle::Private {
     ETradingPlot *mParent;
 };
 
-EResizeHandle::EResizeHandle(ETradingPlot *parent, int halfSize) : QCPItemEllipse(parent), d(new Private) {
+EResizeHandle::EResizeHandle(ETradingPlot *parent, int size) : QCPItemTracer(parent), d(new Private) {
     d->mParent = parent;
     d->mGripDelta = QPointF();
     d->mInitialPos = QPointF();
@@ -55,10 +54,6 @@ EResizeHandle::EResizeHandle(ETradingPlot *parent, int halfSize) : QCPItemEllips
     d->mMoveTimer = new QTimer();
     d->mCurWantedPosPx = QPointF();
     d->mIsChangingOnlyOneCoordinate = false;
-    d->mCenterTracer = new QCPItemTracer(parent);
-    d->mCenterTracer->setStyle(QCPItemTracer::tsNone);
-    d->mCenterTracer->setInterpolating(true);
-    d->mCenterTracer->setSelectable(false);
     d->mUserLayer = parent->userLayer();
     d->mMode = Mode::mResizing;
 
@@ -79,19 +74,15 @@ EResizeHandle::EResizeHandle(ETradingPlot *parent, int halfSize) : QCPItemEllips
     d->mHelperVertical->setVisible(false);
     d->mHelperHorizontal->setVisible(false);
 
-    topLeft->setParentAnchor(d->mCenterTracer->position);
-    bottomRight->setParentAnchor(d->mCenterTracer->position);
-    topLeft->setType(QCPItemPosition::ptAbsolute);
-    bottomRight->setType(QCPItemPosition::ptAbsolute);
-
-    topLeft->setCoords(-halfSize, -halfSize);
-    bottomRight->setCoords(halfSize, halfSize);
-
+    setSize(size);
+    setStyle(QCPItemTracer::tsCircle);
+    setInterpolating(true);
     setSelectable(false);
     setColor(QColor(0xd1, 0xd4, 0xdc, 255));
     setPen(QPen(Qt::blue, 1));
     setSelectedPen(QPen(Qt::blue, 2));
     setLayer(d->mUserLayer);
+    position->setType(QCPItemPosition::ptPlotCoords);
 
     d->mMoveTimer->setInterval(25);  // 40 FPS
     connect(d->mMoveTimer, SIGNAL(timeout()), this, SLOT(moveToWantedPos()));
@@ -118,8 +109,7 @@ void EResizeHandle::setActive(bool isActive) {
 
 void EResizeHandle::startMoving(Mode mode, const QPointF &mousePos, bool shiftIsPressed) {
     d->mMode = mode;
-    d->mGripDelta =
-        d->mParent->coordsToPixels(d->mCenterTracer->position->key(), d->mCenterTracer->position->value()) - mousePos;
+    d->mGripDelta = this->position->pixelPosition() - mousePos;
 
     d->mInitialPos = pos();
     d->mLastWantedPos = d->mInitialPos;
@@ -154,7 +144,7 @@ void EResizeHandle::startMoving(Mode mode, const QPointF &mousePos, bool shiftIs
 }
 
 QPointF EResizeHandle::pos() const {
-    return d->mCenterTracer->position->coords();
+    return this->position->coords();
 }
 
 const QColor &EResizeHandle::color() const {
@@ -167,7 +157,7 @@ void EResizeHandle::setColor(const QColor &color) {
 }
 
 void EResizeHandle::setVisible(bool on) {
-    QCPItemEllipse::setVisible(on);
+    QCPItemTracer::setVisible(on);
 }
 
 void EResizeHandle::stopMoving() {
@@ -206,7 +196,7 @@ void EResizeHandle::moveCoord(double x, double y) {
 
     // X axis is integer
     x = std::round(x);
-    d->mCenterTracer->position->setCoords(x, y);
+    this->position->setCoords(x, y);
 
     Q_EMIT moved(QPointF(x, y));
     d->mUserLayer->replot();

@@ -253,7 +253,10 @@ void ETradingAngle::resizePointStoppedMoving(bool cancelled) {
 
     if (d->mIsDrawing) {
         Q_EMIT drawingCompleted(cancelled);
+        return;
     }
+
+    d->mUserLayer->replot();
 }
 
 void ETradingAngle::setResizeActive(bool active) {

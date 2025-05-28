@@ -295,7 +295,12 @@ void ETradingTriangle::resizePointStoppedMoving(bool cancelled) {
         return;
     }
 
-    Q_EMIT drawingCompleted(false);
+    if (d->mIsDrawing) {
+        Q_EMIT drawingCompleted(false);
+        return;
+    }
+
+    d->mUserLayer->replot();
 }
 
 void ETradingTriangle::setResizeActive(bool active) {

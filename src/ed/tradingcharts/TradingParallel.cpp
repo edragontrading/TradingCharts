@@ -306,7 +306,10 @@ void ETradingParallel::resizePointStoppedMoving(bool cancelled) {
             QPointF mousePos = d->mParent->coordsToPixels(this->point2->key(), this->point2->value());
             d->mResizePoint3->startMoving(EResizeHandle::Mode::mDrawing, mousePos, false);
         }
+        return;
     }
+
+    d->mUserLayer->replot();
 }
 
 void ETradingParallel::setResizeActive(bool active) {

@@ -32,7 +32,7 @@ namespace ed {
 
 class ETradingPlot;
 
-class ED_EXPORT EResizeHandle : public QCPItemEllipse {
+class ED_EXPORT EResizeHandle : public QCPItemTracer {
     Q_OBJECT
 
 public:
@@ -42,7 +42,7 @@ public:
     };
 
 public:
-    explicit EResizeHandle(ETradingPlot *parent, int halfSize = 5);
+    explicit EResizeHandle(ETradingPlot *parent, int size = 10);
 
     ~EResizeHandle();
 

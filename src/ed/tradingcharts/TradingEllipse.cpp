@@ -252,7 +252,10 @@ void ETradingEllipse::resizePointStoppedMoving(bool cancelled) {
     disconnect(d->mResizeSelect, SIGNAL(moved(const QPointF &)), this, SLOT(pointMoving(const QPointF &)));
     if (d->mIsDrawing) {
         Q_EMIT drawingCompleted(cancelled);
+        return;
     }
+
+    d->mUserLayer->replot();
 }
 
 void ETradingEllipse::setResizeActive(bool active) {

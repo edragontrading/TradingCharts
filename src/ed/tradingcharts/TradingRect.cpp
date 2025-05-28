@@ -253,7 +253,10 @@ void ETradingRect::resizePointStoppedMoving(bool cancelled) {
 
     if (d->mIsDrawing) {
         Q_EMIT drawingCompleted(cancelled);
+        return;
     }
+
+    d->mUserLayer->replot();
 }
 
 void ETradingRect::setResizeActive(bool active) {
